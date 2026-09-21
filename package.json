@@ -1,0 +1,18 @@
+{
+  "name": "hbm-story",
+  "version": "1.0.0",
+  "description": "",
+  "main": "build.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "clean-css": "^5.3.3",
+    "javascript-obfuscator": "^5.8.0",
+    "terser": "^5.51.2"
+  }
+}

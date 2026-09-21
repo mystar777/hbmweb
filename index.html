@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HBM — 모든 AI의 심장에는, 기억이 있다</title>
+  <meta name="description" content="High Bandwidth Memory의 세계로 떠나는 시네마틱 여행. 데이터센터에서 나노 스케일까지.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Global Canvas for particle effects -->
+  <canvas id="particle-canvas"></canvas>
+
+  <!-- Progress Bar -->
+  <nav id="progress-nav" aria-label="진행 상황">
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+    <div class="progress-dots">
+      <button class="dot active" data-scene="0" aria-label="오프닝"><span>01</span></button>
+      <button class="dot" data-scene="1" aria-label="데이터센터"><span>02</span></button>
+      <button class="dot" data-scene="2" aria-label="HBM 구조"><span>03</span></button>
+      <button class="dot" data-scene="3" aria-label="스케일 다이브"><span>04</span></button>
+      <button class="dot" data-scene="4" aria-label="데이터 흐름"><span>05</span></button>
+      <button class="dot" data-scene="5" aria-label="진화"><span>06</span></button>
+      <button class="dot" data-scene="6" aria-label="미래"><span>07</span></button>
+    </div>
+  </nav>
+
+  <!-- Scroll Container -->
+  <main id="scroll-container">
+
+    <!-- ===================== SCENE 1: OPENING ===================== -->
+    <section id="scene-0" class="scene scene-opening" data-scene-index="0">
+      <div class="scene-content">
+        <div class="opening-text">
+          <p class="opening-subtitle fade-element" data-delay="0">HIGH BANDWIDTH MEMORY</p>
+          <h1 class="opening-title fade-element" data-delay="300">
+            <span class="line">모든 AI의 심장에는,</span>
+            <span class="line accent">기억이 있다</span>
+          </h1>
+          <p class="opening-desc fade-element" data-delay="600">
+            데이터센터의 깊은 곳에서 나노미터의 세계까지<br>
+            HBM이 만들어낸 혁명의 여정을 함께합니다
+          </p>
+        </div>
+        <div class="scroll-indicator fade-element" data-delay="1200">
+          <span>스크롤하여 여정을 시작하세요</span>
+          <div class="scroll-arrow">
+            <svg viewBox="0 0 24 24" width="24" height="24">
+              <path d="M12 4v16m0 0l-6-6m6 6l6-6" stroke="currentColor" stroke-width="2" fill="none"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== SCENE 2: DATA CENTER ===================== -->
+    <section id="scene-1" class="scene scene-datacenter" data-scene-index="1">
+      <div class="scene-content">
+        <div class="dc-text-overlay">
+          <p class="scene-label fade-element">CHAPTER 01</p>
+          <h2 class="scene-title fade-element" data-delay="200">데이터센터의 심장</h2>
+          <p class="scene-desc fade-element" data-delay="400">
+            매일 수조 개의 데이터가 이곳을 지나갑니다.<br>
+            이 거대한 시설의 가장 깊은 곳에, 그것이 있습니다.
+          </p>
+        </div>
+        <div class="datacenter-visual">
+          <div class="server-room">
+            <div class="server-rack" data-rack="1">
+              <div class="rack-unit"></div><div class="rack-unit"></div><div class="rack-unit"></div>
+              <div class="rack-unit"></div><div class="rack-unit"></div><div class="rack-unit"></div>
+            </div>
+            <div class="server-rack" data-rack="2">
+              <div class="rack-unit"></div><div class="rack-unit"></div><div class="rack-unit"></div>
+              <div class="rack-unit"></div><div class="rack-unit"></div><div class="rack-unit"></div>
+            </div>
+            <div class="server-rack highlight-rack" data-rack="3">
+              <div class="rack-unit"></div><div class="rack-unit"></div><div class="rack-unit"></div>
+              <div class="rack-unit gpu-unit">
+                <span class="gpu-label">GPU</span>
+                <div class="gpu-glow"></div>
+              </div>
+              <div class="rack-unit"></div><div class="rack-unit"></div>
+            </div>
+            <div class="server-rack" data-rack="4">
+              <div class="rack-unit"></div><div class="rack-unit"></div><div class="rack-unit"></div>
+              <div class="rack-unit"></div><div class="rack-unit"></div><div class="rack-unit"></div>
+            </div>
+            <div class="server-rack" data-rack="5">
+              <div class="rack-unit"></div><div class="rack-unit"></div><div class="rack-unit"></div>
+              <div class="rack-unit"></div><div class="rack-unit"></div><div class="rack-unit"></div>
+            </div>
+          </div>
+        </div>
+        <div class="zoom-transition-overlay" id="zoom-into-gpu"></div>
+      </div>
+    </section>
+
+    <!-- ===================== SCENE 3: THIS IS HBM ===================== -->
+    <section id="scene-2" class="scene scene-hbm-intro" data-scene-index="2">
+      <div class="scene-content">
+        <div class="hbm-text-left">
+          <p class="scene-label fade-element">CHAPTER 02</p>
+          <h2 class="scene-title fade-element" data-delay="200">이것이<br><span class="accent">HBM</span>이다</h2>
+          <p class="scene-desc fade-element" data-delay="400">
+            건물을 세로로 쌓듯,<br>
+            메모리를 수직으로 적층했습니다.<br><br>
+            <strong>8~16개의 DRAM 다이</strong>가<br>
+            초미세 관통 전극(TSV)으로 연결되어<br>
+            하나의 칩 안에 <strong>초고속 데이터 고속도로</strong>를<br>
+            만들어냅니다.
+          </p>
+        </div>
+        <div class="hbm-stack-3d" id="hbm-stack">
+          <div class="stack-perspective">
+            <div class="stack-layer heat-spreader" data-layer="top">
+              <span class="layer-label">히트스프레더</span>
+              <span class="layer-desc">열 방출</span>
+            </div>
+            <div class="stack-layer dram-die" data-layer="d8"><span class="layer-label">DRAM Die 8</span></div>
+            <div class="stack-layer dram-die" data-layer="d7"><span class="layer-label">DRAM Die 7</span></div>
+            <div class="stack-layer dram-die" data-layer="d6"><span class="layer-label">DRAM Die 6</span></div>
+            <div class="stack-layer dram-die" data-layer="d5"><span class="layer-label">DRAM Die 5</span></div>
+            <div class="stack-layer dram-die" data-layer="d4"><span class="layer-label">DRAM Die 4</span></div>
+            <div class="stack-layer dram-die" data-layer="d3"><span class="layer-label">DRAM Die 3</span></div>
+            <div class="stack-layer dram-die" data-layer="d2"><span class="layer-label">DRAM Die 2</span></div>
+            <div class="stack-layer dram-die" data-layer="d1"><span class="layer-label">DRAM Die 1</span></div>
+            <div class="stack-layer base-die" data-layer="base">
+              <span class="layer-label">베이스 로직 다이</span>
+              <span class="layer-desc">I/O 제어</span>
+            </div>
+            <!-- TSV visualization lines -->
+            <div class="tsv-lines">
+              <div class="tsv-line"></div>
+              <div class="tsv-line"></div>
+              <div class="tsv-line"></div>
+              <div class="tsv-line"></div>
+              <div class="tsv-line"></div>
+            </div>
+            <!-- Data flow dots moving through TSVs -->
+            <div class="tsv-data-flow">
+              <div class="data-dot"></div>
+              <div class="data-dot" style="animation-delay: 0.3s"></div>
+              <div class="data-dot" style="animation-delay: 0.6s"></div>
+              <div class="data-dot" style="animation-delay: 0.9s"></div>
+              <div class="data-dot" style="animation-delay: 1.2s"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== SCENE 4: SCALE DIVE ===================== -->
+    <section id="scene-3" class="scene scene-scale-dive" data-scene-index="3">
+      <div class="scene-content scale-dive-content">
+        <div class="scale-header">
+          <p class="scene-label fade-element">CHAPTER 03</p>
+          <h2 class="scene-title fade-element" data-delay="200">나노의 세계로</h2>
+        </div>
+        <div class="scale-viewport-container" id="scale-viewport">
+          <!-- Canvas draws the microscope viewport here -->
+          <canvas id="scale-canvas"></canvas>
+          <div class="scale-info-panel" id="scale-info">
+            <div class="magnification" id="magnification">×1</div>
+            <div class="current-size" id="current-size">31mm × 31mm</div>
+            <div class="comparison-text" id="comparison-text">손톱 크기와 비슷합니다</div>
+          </div>
+          <div class="scale-level-name" id="scale-level-name">HBM 패키지</div>
+        </div>
+        <!-- Extra scroll height for zoom interaction -->
+        <div class="scale-scroll-space"></div>
+      </div>
+    </section>
+
+    <!-- ===================== SCENE 5: DATA FLOW ===================== -->
+    <section id="scene-4" class="scene scene-dataflow" data-scene-index="4">
+      <div class="scene-content">
+        <div class="dataflow-header">
+          <p class="scene-label fade-element">CHAPTER 04</p>
+          <h2 class="scene-title fade-element" data-delay="200">빛의 속도로<br><span class="accent">흐르는 데이터</span></h2>
+        </div>
+        <div class="dataflow-comparison">
+          <div class="flow-side flow-traditional">
+            <h3 class="flow-label">기존 메모리 (DDR5)</h3>
+            <div class="flow-visual" id="flow-ddr">
+              <canvas id="ddr-canvas"></canvas>
+            </div>
+            <div class="flow-stats">
+              <div class="stat">
+                <span class="stat-value" data-target="51.2">0</span>
+                <span class="stat-unit">GB/s</span>
+              </div>
+              <div class="stat-label">대역폭</div>
+              <div class="stat-analogy">🛤️ 2차선 도로</div>
+            </div>
+          </div>
+          <div class="flow-divider">
+            <span class="vs-badge">VS</span>
+          </div>
+          <div class="flow-side flow-hbm">
+            <h3 class="flow-label">HBM3E</h3>
+            <div class="flow-visual" id="flow-hbm">
+              <canvas id="hbm-canvas"></canvas>
+            </div>
+            <div class="flow-stats">
+              <div class="stat">
+                <span class="stat-value highlight" data-target="1180">0</span>
+                <span class="stat-unit">GB/s</span>
+              </div>
+              <div class="stat-label">대역폭</div>
+              <div class="stat-analogy">🛣️ 1024차선 고속도로</div>
+            </div>
+          </div>
+        </div>
+        <p class="dataflow-desc fade-element" data-delay="400">
+          HBM은 <strong>1,024비트</strong>의 초광폭 데이터 버스를 통해<br>
+          기존 메모리 대비 <strong>23배</strong> 빠른 속도로 데이터를 전송합니다
+        </p>
+      </div>
+    </section>
+
+    <!-- ===================== SCENE 6: EVOLUTION ===================== -->
+    <section id="scene-5" class="scene scene-evolution" data-scene-index="5">
+      <div class="scene-content">
+        <div class="evo-header">
+          <p class="scene-label fade-element">CHAPTER 05</p>
+          <h2 class="scene-title fade-element" data-delay="200">HBM의 <span class="accent">진화</span></h2>
+          <p class="scene-desc fade-element" data-delay="400">2013년 탄생 이후, 끊임없이 한계를 넘어왔습니다</p>
+        </div>
+        <div class="evolution-timeline" id="evo-timeline">
+          <div class="evo-track"></div>
+          <div class="evo-item" data-gen="hbm1" data-year="2013" data-bw="128" data-cap="1" data-stack="4">
+            <div class="evo-year">2013</div>
+            <div class="evo-card">
+              <h3>HBM</h3>
+              <div class="evo-bar-container">
+                <div class="evo-bar" style="--target-width: 4%"></div>
+              </div>
+              <div class="evo-specs">
+                <span>128 GB/s</span>
+                <span>1 GB</span>
+                <span>4단 적층</span>
+              </div>
+              <p class="evo-note">최초의 HBM. 새로운 시대의 시작.</p>
+            </div>
+          </div>
+          <div class="evo-item" data-gen="hbm2" data-year="2016" data-bw="256" data-cap="8" data-stack="8">
+            <div class="evo-year">2016</div>
+            <div class="evo-card">
+              <h3>HBM2</h3>
+              <div class="evo-bar-container">
+                <div class="evo-bar" style="--target-width: 8%"></div>
+              </div>
+              <div class="evo-specs">
+                <span>256 GB/s</span>
+                <span>8 GB</span>
+                <span>8단 적층</span>
+              </div>
+              <p class="evo-note">본격 상용화. GPU 가속 시대를 열다.</p>
+            </div>
+          </div>
+          <div class="evo-item" data-gen="hbm2e" data-year="2020" data-bw="460" data-cap="16" data-stack="8">
+            <div class="evo-year">2020</div>
+            <div class="evo-card">
+              <h3>HBM2E</h3>
+              <div class="evo-bar-container">
+                <div class="evo-bar" style="--target-width: 14%"></div>
+              </div>
+              <div class="evo-specs">
+                <span>460 GB/s</span>
+                <span>16 GB</span>
+                <span>8단 적층</span>
+              </div>
+              <p class="evo-note">AI 훈련이 본격화되다.</p>
+            </div>
+          </div>
+          <div class="evo-item" data-gen="hbm3" data-year="2022" data-bw="819" data-cap="24" data-stack="12">
+            <div class="evo-year">2022</div>
+            <div class="evo-card">
+              <h3>HBM3</h3>
+              <div class="evo-bar-container">
+                <div class="evo-bar" style="--target-width: 25%"></div>
+              </div>
+              <div class="evo-specs">
+                <span>819 GB/s</span>
+                <span>24 GB</span>
+                <span>12단 적층</span>
+              </div>
+              <p class="evo-note">채널 16개로 확장. 대형 언어모델을 위해.</p>
+            </div>
+          </div>
+          <div class="evo-item" data-gen="hbm3e" data-year="2024" data-bw="1180" data-cap="36" data-stack="12">
+            <div class="evo-year">2024</div>
+            <div class="evo-card">
+              <h3>HBM3E</h3>
+              <div class="evo-bar-container">
+                <div class="evo-bar" style="--target-width: 36%"></div>
+              </div>
+              <div class="evo-specs">
+                <span>1.18 TB/s</span>
+                <span>36 GB</span>
+                <span>12단 적층</span>
+              </div>
+              <p class="evo-note">테라바이트 시대. 현세대 AI 가속기의 핵심.</p>
+            </div>
+          </div>
+          <div class="evo-item" data-gen="hbm4" data-year="2026" data-bw="3300" data-cap="64" data-stack="16">
+            <div class="evo-year">2026</div>
+            <div class="evo-card featured">
+              <h3>HBM4</h3>
+              <div class="evo-bar-container">
+                <div class="evo-bar" style="--target-width: 100%"></div>
+              </div>
+              <div class="evo-specs">
+                <span>3.3 TB/s</span>
+                <span>64 GB</span>
+                <span>16단 적층</span>
+              </div>
+              <p class="evo-note">2048-bit 인터페이스. 트릴리온 파라미터 모델의 시대.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== SCENE 7: OUTRO ===================== -->
+    <section id="scene-6" class="scene scene-outro" data-scene-index="6">
+      <div class="scene-content">
+        <div class="outro-text">
+          <h2 class="outro-title fade-element">
+            <span class="line">이 모든 것이</span>
+            <span class="line">당신의 손끝에서</span>
+            <span class="line accent">일어나고 있습니다</span>
+          </h2>
+          <p class="outro-desc fade-element" data-delay="400">
+            손톱보다 작은 칩 안에서,<br>
+            머리카락보다 가는 전극을 통해,<br>
+            초당 수 테라바이트의 데이터가 흐르고 있습니다.<br><br>
+            <strong>이것이 HBM — High Bandwidth Memory입니다.</strong>
+          </p>
+          <div class="outro-stats fade-element" data-delay="600">
+            <div class="outro-stat">
+              <div class="stat-number" data-count="3300">0</div>
+              <div class="stat-label">GB/s 대역폭</div>
+            </div>
+            <div class="outro-stat">
+              <div class="stat-number" data-count="16">0</div>
+              <div class="stat-label">단 적층</div>
+            </div>
+            <div class="outro-stat">
+              <div class="stat-number" data-count="2048">0</div>
+              <div class="stat-label">bit 인터페이스</div>
+            </div>
+          </div>
+        </div>
+        <div class="credits fade-element" data-delay="1000">
+          <p>HBM Interactive Experience</p>
+          <p class="credits-sub">Scroll-driven storytelling</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Scripts (order matters: dependencies first) -->
+  <script src="js/particles.js"></script>
+  <script src="js/scale-dive.js"></script>
+  <script src="js/scenes.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
