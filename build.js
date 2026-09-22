@@ -142,7 +142,10 @@ async function build() {
   // ---- 6. Copy static assets ----
   const assetsDir = path.join(__dirname, 'assets');
   if (fs.existsSync(assetsDir)) {
-    fs.cpSync(assetsDir, path.join(buildDir, 'assets'), { recursive: true });
+    const buildAssetsDir = path.join(buildDir, 'assets');
+    // Prevent renamed media from lingering in the production bundle.
+    if (fs.existsSync(buildAssetsDir)) fs.rmSync(buildAssetsDir, { recursive: true, force: true });
+    fs.cpSync(assetsDir, buildAssetsDir, { recursive: true });
     console.log('   ✅ build/assets copied');
   }
 
