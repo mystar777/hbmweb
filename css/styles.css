@@ -1581,6 +1581,82 @@ body {
   line-height: 1.45;
 }
 
+.scope-reference-ladder {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(137, 209, 224, 0.1);
+}
+
+.scope-reference-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 7px;
+  color: rgba(173, 217, 227, 0.48);
+  font-family: var(--font-display);
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+}
+
+.scope-reference-heading small {
+  color: rgba(225, 238, 242, 0.42);
+  font-family: var(--font-body);
+  font-size: 0.58rem;
+  letter-spacing: 0;
+}
+
+.scope-reference-item {
+  display: grid;
+  grid-template-columns: 50px 1fr;
+  gap: 9px;
+  align-items: center;
+  min-height: 30px;
+  padding: 4px 7px;
+  border-left: 2px solid transparent;
+  opacity: 0.46;
+  transition: opacity 0.25s ease, border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
+}
+
+.scope-reference-item.is-active {
+  opacity: 1;
+  border-left-color: var(--primary);
+  background: rgba(0, 212, 255, 0.08);
+  transform: translateX(3px);
+}
+
+.scope-reference-mag {
+  color: rgba(150, 222, 236, 0.7);
+  font-family: var(--font-display);
+  font-size: 0.58rem;
+  letter-spacing: -0.03em;
+}
+
+.scope-reference-item.is-active .scope-reference-mag {
+  color: var(--primary);
+}
+
+.scope-reference-copy {
+  min-width: 0;
+}
+
+.scope-reference-copy strong,
+.scope-reference-copy small {
+  display: block;
+}
+
+.scope-reference-copy strong {
+  color: rgba(225, 241, 245, 0.82);
+  font-size: 0.64rem;
+  font-weight: 600;
+}
+
+.scope-reference-copy small {
+  margin-top: 1px;
+  color: rgba(181, 213, 221, 0.52);
+  font-size: 0.59rem;
+}
+
 .scope-stage-buttons {
   display: flex;
   gap: 8px;
@@ -1876,7 +1952,8 @@ body {
   }
 
   .scale-info-panel::before,
-  .scope-meter {
+  .scope-meter,
+  .scope-reference-ladder {
     display: none;
   }
 
