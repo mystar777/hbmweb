@@ -82,23 +82,6 @@ window.HBM = window.HBM || {};
       });
       this.observers.push(fadeObserver);
 
-      // Set up evolution timeline observer
-      const evoObserver = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add('visible');
-            }
-          });
-        },
-        { threshold: 0.2 }
-      );
-
-      document.querySelectorAll('.evo-item').forEach((el) => {
-        evoObserver.observe(el);
-      });
-      this.observers.push(evoObserver);
-
       // Init data flow canvases
       this.initDataFlowCanvases();
       this.initMuseumInteractions();
@@ -271,31 +254,186 @@ window.HBM = window.HBM || {};
     initEvolutionLab() {
       const slider = document.getElementById('evo-scrubber');
       const output = document.getElementById('evo-scrubber-value');
-      const timeline = document.getElementById('evo-timeline');
-      if (!slider || !timeline) return;
+      const exhibit = document.getElementById('evo-exhibit');
+      const canvas = document.getElementById('evo-code-rain');
+      if (!slider || !exhibit || !canvas) return;
 
-      const items = Array.from(timeline.querySelectorAll('.evo-item'));
-      const names = items.map((item) => item.querySelector('h3')?.textContent?.trim() || 'HBM');
-      const update = () => {
-        const selected = Math.max(0, Math.min(items.length - 1, Number(slider.value)));
-        timeline.dataset.selectedGeneration = String(selected);
-        items.forEach((item, index) => {
-          item.classList.toggle('is-selected', index === selected);
-          item.classList.toggle('is-past', index < selected);
-          item.classList.toggle('is-future', index > selected);
+      const ctx = canvas.getContext('2d');
+      const fields = {
+        current: document.getElementById('evo-counter-current'),
+        year: document.getElementById('evo-year'),
+        name: document.getElementById('evo-name'),
+        headline: document.getElementById('evo-headline'),
+        description: document.getElementById('evo-description'),
+        milestone: document.getElementById('evo-milestone'),
+        bandwidth: document.getElementById('evo-bandwidth'),
+        capacity: document.getElementById('evo-capacity'),
+        stack: document.getElementById('evo-stack'),
+        interface: document.getElementById('evo-interface'),
+        ratio: document.getElementById('evo-bandwidth-ratio'),
+        fill: document.getElementById('evo-bandwidth-fill'),
+        stackLabel: document.getElementById('evo-stack-label')
+      };
+      const chipLayers = Array.from(document.querySelectorAll('#evo-chip-stack .evo-chip-layers i'));
+
+      const generations = [
+        {
+          name: 'HBM', year: '2013', headline: '메모리를 쌓아 올리다',
+          description: '여러 DRAM을 수직으로 쌓고 TSV로 연결해, GPU 바로 옆에서 넓은 통로로 데이터를 전달하기 시작했습니다.',
+          milestone: '좁고 빠른 길 여러 개 대신, 데이터가 함께 달리는 넓은 고속도로를 만들었습니다.',
+          bandwidth: '128 GB/s', capacity: '1 GB', stack: '4단', stackLabel: '4-HIGH STACK', interface: '1,024-bit', ratio: 4, layers: 4
+        },
+        {
+          name: 'HBM2', year: '2016', headline: 'GPU 가속의 동료가 되다',
+          description: '용량과 속도가 함께 커지며 고성능 GPU와 가속기에 본격적으로 쓰이기 시작했습니다.',
+          milestone: '한 스택에 더 많은 데이터를 담아 과학 계산과 그래픽 작업의 대기 시간을 줄였습니다.',
+          bandwidth: '256 GB/s', capacity: '8 GB', stack: '8단', stackLabel: '8-HIGH STACK', interface: '1,024-bit', ratio: 8, layers: 7
+        },
+        {
+          name: 'HBM2E', year: '2020', headline: 'AI 훈련의 속도를 끌어올리다',
+          description: '더 빠른 핀 속도와 큰 용량으로, 급격히 커진 딥러닝 모델에 데이터를 쉼 없이 공급했습니다.',
+          milestone: '연산 장치가 메모리를 기다리는 시간을 줄여 대규모 AI 훈련을 현실적인 속도로 만들었습니다.',
+          bandwidth: '460 GB/s', capacity: '16 GB', stack: '8단', stackLabel: '8-HIGH STACK', interface: '1,024-bit', ratio: 14, layers: 7
+        },
+        {
+          name: 'HBM3', year: '2022', headline: '대형 언어모델을 먹여 살리다',
+          description: '채널 수와 전송 속도가 다시 늘어나, 수많은 행렬 연산이 동시에 데이터를 받을 수 있게 됐습니다.',
+          milestone: '더 많은 AI 코어가 쉬지 않고 일하도록 메모리 대역폭을 1 TB/s에 가깝게 끌어올렸습니다.',
+          bandwidth: '819 GB/s', capacity: '24 GB', stack: '12단', stackLabel: '12-HIGH STACK', interface: '1,024-bit', ratio: 25, layers: 10
+        },
+        {
+          name: 'HBM3E', year: '2024', headline: '테라바이트의 벽을 넘다',
+          description: '한 스택에서 초당 1 TB가 넘는 데이터를 옮기며, 생성형 AI 가속기의 핵심 메모리로 자리 잡았습니다.',
+          milestone: '방대한 모델 가중치를 더 빠르게 읽어 AI의 학습과 답변 속도를 함께 높였습니다.',
+          bandwidth: '1.18 TB/s', capacity: '36 GB', stack: '12단', stackLabel: '12-HIGH STACK', interface: '1,024-bit', ratio: 36, layers: 10
+        },
+        {
+          name: 'HBM4', year: '2026', headline: '데이터 통로를 두 배로 넓히다',
+          description: 'I/O 폭을 2,048-bit로 확장하는 차세대 HBM으로, 더 거대한 AI 시스템을 위한 대역폭을 준비합니다.',
+          milestone: '통로 자체를 두 배로 넓혀 한 번에 더 많은 데이터를 주고받는 방향으로 진화합니다.',
+          bandwidth: '최대 3.3 TB/s', capacity: '최대 48 GB', stack: '16단 샘플', stackLabel: '16-HIGH SAMPLE', interface: '2,048-bit', ratio: 100, layers: 12
+        }
+      ];
+
+      let activeIndex = 0;
+      let transitionToken = 0;
+      let swapTimer = 0;
+      let finishTimer = 0;
+      let rainFrame = 0;
+
+      const renderGeneration = (index) => {
+        const generation = generations[index];
+        exhibit.dataset.generation = String(index);
+        if (fields.current) fields.current.textContent = String(index + 1).padStart(2, '0');
+        Object.entries({
+          year: generation.year,
+          name: generation.name,
+          headline: generation.headline,
+          description: generation.description,
+          milestone: generation.milestone,
+          bandwidth: generation.bandwidth,
+          capacity: generation.capacity,
+          stack: generation.stack,
+          interface: generation.interface,
+          stackLabel: generation.stackLabel
+        }).forEach(([key, value]) => {
+          if (fields[key]) fields[key].textContent = value;
         });
-        if (output) output.textContent = names[selected];
-        slider.setAttribute('aria-valuetext', names[selected]);
+        if (fields.ratio) fields.ratio.textContent = `HBM4 대비 ${generation.ratio}%`;
+        if (fields.fill) fields.fill.style.setProperty('--meter-width', `${generation.ratio}%`);
+        chipLayers.forEach((layer, layerIndex) => {
+          layer.classList.toggle('is-visible', layerIndex < generation.layers);
+        });
       };
 
-      slider.addEventListener('input', update);
-      items.forEach((item, index) => {
-        item.addEventListener('click', () => {
-          slider.value = String(index);
-          update();
-        });
-      });
-      update();
+      const stopRain = () => {
+        cancelAnimationFrame(rainFrame);
+        rainFrame = 0;
+        if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+      };
+
+      const startRain = (token) => {
+        if (!ctx) return;
+        const rect = exhibit.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+        canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        const width = rect.width;
+        const height = rect.height;
+        const fontSize = width < 600 ? 12 : 15;
+        const columns = Math.ceil(width / fontSize);
+        const drops = Array.from({ length: columns }, () => Math.random() * (height / fontSize));
+        const speeds = drops.map(() => 0.48 + Math.random() * 1.35);
+        const glyphs = ['0', '1', 'A', 'F', '7', '9', 'TSV', 'DRAM', 'HBM', '↕', '◇', '×'];
+
+        const draw = () => {
+          if (token !== transitionToken || !exhibit.classList.contains('is-transitioning')) return;
+          ctx.fillStyle = 'rgba(2, 7, 13, 0.17)';
+          ctx.fillRect(0, 0, width, height);
+          ctx.font = `${fontSize}px "IBM Plex Mono", "Courier New", monospace`;
+          ctx.textAlign = 'center';
+
+          drops.forEach((drop, column) => {
+            const x = column * fontSize + fontSize / 2;
+            const y = drop * fontSize;
+            const glyph = glyphs[Math.floor(Math.random() * glyphs.length)];
+            ctx.fillStyle = column % 5 === 0 ? 'rgba(164, 94, 255, 0.82)' : 'rgba(0, 224, 255, 0.78)';
+            ctx.fillText(glyph, x, y);
+            ctx.fillStyle = 'rgba(220, 252, 255, 0.92)';
+            ctx.fillText(glyphs[Math.floor(Math.random() * glyphs.length)], x, y - fontSize);
+            drops[column] += speeds[column];
+            if (y > height + 80 && Math.random() > 0.965) drops[column] = -Math.random() * 18;
+          });
+
+          rainFrame = requestAnimationFrame(draw);
+        };
+
+        ctx.clearRect(0, 0, width, height);
+        draw();
+      };
+
+      const updateScrubber = (index) => {
+        const generation = generations[index];
+        const progress = (index / (generations.length - 1)) * 100;
+        slider.style.setProperty('--evo-progress', `${progress}%`);
+        if (output) output.textContent = `${generation.name} · ${generation.year}`;
+        slider.setAttribute('aria-valuetext', `${generation.name}, ${generation.year}년`);
+      };
+
+      const transitionTo = (index) => {
+        const selected = Math.max(0, Math.min(generations.length - 1, index));
+        updateScrubber(selected);
+        transitionToken += 1;
+        const token = transitionToken;
+        window.clearTimeout(swapTimer);
+        window.clearTimeout(finishTimer);
+        stopRain();
+
+        if (selected === activeIndex && !exhibit.classList.contains('is-transitioning')) return;
+        exhibit.classList.remove('is-reforming');
+        exhibit.classList.add('is-transitioning');
+        startRain(token);
+
+        swapTimer = window.setTimeout(() => {
+          if (token !== transitionToken) return;
+          activeIndex = selected;
+          renderGeneration(activeIndex);
+          exhibit.classList.add('is-reforming');
+        }, 560);
+
+        finishTimer = window.setTimeout(() => {
+          if (token !== transitionToken) return;
+          exhibit.classList.remove('is-transitioning', 'is-reforming');
+          stopRain();
+        }, 1500);
+      };
+
+      slider.addEventListener('input', () => transitionTo(Number(slider.value)));
+      slider.addEventListener('change', () => transitionTo(Number(slider.value)));
+      renderGeneration(activeIndex);
+      updateScrubber(activeIndex);
     }
 
     // ---- Data Flow Comparison Animation ----

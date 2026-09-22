@@ -343,105 +343,88 @@
         <section class="evo-scrubber" aria-labelledby="evo-scrubber-title">
           <div class="evo-scrubber-heading">
             <span id="evo-scrubber-title">전시 체험 · 세대 선택</span>
-            <output id="evo-scrubber-value" for="evo-scrubber">HBM</output>
+            <output id="evo-scrubber-value" for="evo-scrubber">HBM · 2013</output>
           </div>
           <label class="sr-only" for="evo-scrubber">HBM 세대 선택</label>
           <input id="evo-scrubber" type="range" min="0" max="5" value="0" step="1">
-          <div class="evo-scrubber-scale" aria-hidden="true"><span>2013</span><span>2026</span></div>
-          <p>손잡이를 드래그해 세대별 대역폭·용량·적층 변화를 비교해보세요.</p>
+          <div class="evo-scrubber-scale" aria-hidden="true">
+            <span>HBM<small>2013</small></span>
+            <span>HBM2<small>2016</small></span>
+            <span>HBM2E<small>2020</small></span>
+            <span>HBM3<small>2022</small></span>
+            <span>HBM3E<small>2024</small></span>
+            <span>HBM4<small>2026</small></span>
+          </div>
+          <p>손잡이를 움직이면 현재 전시가 코드로 분해된 뒤, 선택한 HBM 세대의 전시로 다시 조립됩니다.</p>
         </section>
-        <div class="evolution-timeline" id="evo-timeline">
-          <div class="evo-track"></div>
-          <div class="evo-item" data-gen="hbm1" data-year="2013" data-bw="128" data-cap="1" data-stack="4">
-            <div class="evo-year">2013</div>
-            <div class="evo-card">
-              <h3>HBM</h3>
-              <div class="evo-bar-container">
-                <div class="evo-bar" style="--target-width: 4%"></div>
-              </div>
-              <div class="evo-specs">
-                <span>128 GB/s</span>
-                <span>1 GB</span>
-                <span>4단 적층</span>
-              </div>
-              <p class="evo-note">최초의 HBM. 새로운 시대의 시작.</p>
-            </div>
+
+        <div class="evo-exhibit" id="evo-exhibit" data-generation="0">
+          <canvas id="evo-code-rain" class="evo-code-rain" aria-hidden="true"></canvas>
+          <div class="evo-code-columns" aria-hidden="true">
+            <span>01AFTSV9HBM0101DRAM7F10</span><span>TSV01B7HBM4E1100A9F01</span>
+            <span>10DRAM8F01TSV110HBM42A</span><span>HBM01001A7FTSV9DRAM11</span>
+            <span>A1F09TSV01HBM410DRAM7</span><span>001HBMTSV8A1FDRAM101</span>
+            <span>DRAM71001HBM4TSVA9F01</span><span>1F0ATSVHBM010DRAM891</span>
+            <span>HBM3E0110TSV7AFDRAM01</span><span>0A1FDRAM9HBM001TSV711</span>
+            <span>TSV110HBM4A01DRAM8F90</span><span>101DRAM7FTSV0AHBM110</span>
+            <span>F09HBM01TSVDRAM78110A</span><span>DRAM01AFTSV101HBM49F</span>
+            <span>HBM1100TSV7FDRAM01A9</span><span>01TSVHBM4EDRAM7A1F01</span>
+            <span>A7F010DRAMTSV9HBM110</span><span>TSV01HBM101DRAM84FA0</span>
+            <span>10HBM4E7FTSV01DRAM9A1</span><span>DRAM90110HBMAFTSV701</span>
+            <span>HBM010TSV8F1ADRAM711</span><span>01A7DRAMHBM4TSV110F9</span>
+            <span>TSV9F0101HBMDRAM7A11</span><span>110DRAMTSVA01HBM4EF7</span>
           </div>
-          <div class="evo-item" data-gen="hbm2" data-year="2016" data-bw="256" data-cap="8" data-stack="8">
-            <div class="evo-year">2016</div>
-            <div class="evo-card">
-              <h3>HBM2</h3>
-              <div class="evo-bar-container">
-                <div class="evo-bar" style="--target-width: 8%"></div>
+          <div class="evo-scanline" aria-hidden="true"></div>
+          <p class="evo-compile-status" aria-hidden="true"><span>MEMORY ARCHIVE</span> 세대 데이터 재구성 중</p>
+
+          <article class="evo-console" id="evo-generation-card" aria-live="polite" aria-atomic="true">
+            <header class="evo-console-header">
+              <div class="evo-console-id">
+                <span class="evo-status-dot"></span>
+                <span>HBM GENERATION ARCHIVE</span>
               </div>
-              <div class="evo-specs">
-                <span>256 GB/s</span>
-                <span>8 GB</span>
-                <span>8단 적층</span>
+              <div class="evo-counter"><span id="evo-counter-current">01</span> / 06</div>
+            </header>
+
+            <div class="evo-console-body">
+              <div class="evo-story">
+                <p class="evo-kicker"><span id="evo-year">2013</span> · MEMORY MILESTONE</p>
+                <h3 id="evo-name">HBM</h3>
+                <p class="evo-headline" id="evo-headline">메모리를 쌓아 올리다</p>
+                <p class="evo-description" id="evo-description">여러 DRAM을 수직으로 쌓고 TSV로 연결해, GPU 바로 옆에서 넓은 통로로 데이터를 전달하기 시작했습니다.</p>
+                <div class="evo-milestone">
+                  <span>왜 중요할까요?</span>
+                  <strong id="evo-milestone">좁고 빠른 길 여러 개 대신, 데이터가 함께 달리는 넓은 고속도로를 만들었습니다.</strong>
+                </div>
               </div>
-              <p class="evo-note">본격 상용화. GPU 가속 시대를 열다.</p>
+
+              <div class="evo-architecture" aria-hidden="true">
+                <div class="evo-orbit evo-orbit-a"></div>
+                <div class="evo-orbit evo-orbit-b"></div>
+                <div class="evo-chip-stack" id="evo-chip-stack">
+                  <div class="evo-chip-layers">
+                    <i></i><i></i><i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i><i></i><i></i>
+                  </div>
+                  <div class="evo-base-die"><span>BASE DIE</span></div>
+                </div>
+                <div class="evo-data-lanes"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                <span class="evo-stack-label" id="evo-stack-label">4-HIGH STACK</span>
+              </div>
             </div>
-          </div>
-          <div class="evo-item" data-gen="hbm2e" data-year="2020" data-bw="460" data-cap="16" data-stack="8">
-            <div class="evo-year">2020</div>
-            <div class="evo-card">
-              <h3>HBM2E</h3>
-              <div class="evo-bar-container">
-                <div class="evo-bar" style="--target-width: 14%"></div>
-              </div>
-              <div class="evo-specs">
-                <span>460 GB/s</span>
-                <span>16 GB</span>
-                <span>8단 적층</span>
-              </div>
-              <p class="evo-note">AI 훈련이 본격화되다.</p>
+
+            <div class="evo-spec-grid">
+              <div class="evo-spec-cell"><span>대역폭</span><strong id="evo-bandwidth">128 GB/s</strong><small>한 스택 기준 예시</small></div>
+              <div class="evo-spec-cell"><span>용량</span><strong id="evo-capacity">1 GB</strong><small>세대 대표 구성</small></div>
+              <div class="evo-spec-cell"><span>적층</span><strong id="evo-stack">4단</strong><small>DRAM 다이</small></div>
+              <div class="evo-spec-cell"><span>I/O 폭</span><strong id="evo-interface">1,024-bit</strong><small>데이터 통로</small></div>
             </div>
-          </div>
-          <div class="evo-item" data-gen="hbm3" data-year="2022" data-bw="819" data-cap="24" data-stack="12">
-            <div class="evo-year">2022</div>
-            <div class="evo-card">
-              <h3>HBM3</h3>
-              <div class="evo-bar-container">
-                <div class="evo-bar" style="--target-width: 25%"></div>
-              </div>
-              <div class="evo-specs">
-                <span>819 GB/s</span>
-                <span>24 GB</span>
-                <span>12단 적층</span>
-              </div>
-              <p class="evo-note">채널 16개로 확장. 대형 언어모델을 위해.</p>
+
+            <div class="evo-bandwidth-meter">
+              <div class="evo-meter-copy"><span>GENERATION BANDWIDTH</span><strong id="evo-bandwidth-ratio">HBM4 대비 4%</strong></div>
+              <div class="evo-meter-track"><i id="evo-bandwidth-fill"></i></div>
             </div>
-          </div>
-          <div class="evo-item" data-gen="hbm3e" data-year="2024" data-bw="1180" data-cap="36" data-stack="12">
-            <div class="evo-year">2024</div>
-            <div class="evo-card">
-              <h3>HBM3E</h3>
-              <div class="evo-bar-container">
-                <div class="evo-bar" style="--target-width: 36%"></div>
-              </div>
-              <div class="evo-specs">
-                <span>1.18 TB/s</span>
-                <span>36 GB</span>
-                <span>12단 적층</span>
-              </div>
-              <p class="evo-note">테라바이트 시대. 현세대 AI 가속기의 핵심.</p>
-            </div>
-          </div>
-          <div class="evo-item" data-gen="hbm4" data-year="2026" data-bw="3300" data-cap="48" data-stack="16">
-            <div class="evo-year">2026</div>
-            <div class="evo-card featured">
-              <h3>HBM4</h3>
-              <div class="evo-bar-container">
-                <div class="evo-bar" style="--target-width: 100%"></div>
-              </div>
-              <div class="evo-specs">
-                <span>3.3 TB/s</span>
-                <span>최대 48 GB</span>
-                <span>16단 샘플</span>
-              </div>
-              <p class="evo-note">2048-bit 인터페이스. 트릴리온 파라미터 모델의 시대.</p>
-            </div>
-          </div>
+          </article>
         </div>
       </div>
     </section>
