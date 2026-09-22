@@ -177,6 +177,10 @@
         </div>
         <div class="scale-viewport-container" id="scale-viewport">
           <canvas id="scale-canvas" aria-label="HBM 패키지에서 나노미터 DRAM 셀까지 확대하는 대화형 현미경"></canvas>
+          <video id="scale-video-source" class="scale-video-source" preload="auto" autoplay loop muted playsinline tabindex="-1" aria-hidden="true"
+            poster="assets/scale-dive/keyframes/01-package.png">
+            <source src="assets/scale-dive/hbm-microscope-dive.mp4" type="video/mp4">
+          </video>
           <div class="scale-level-name" id="scale-level-name">
             <span class="level-index">01 / 05</span>
             <strong>HBM 패키지</strong>
@@ -286,6 +290,23 @@
           <div class="payload-control">
             <div class="payload-label"><label for="payload-slider">데이터 크기</label><output id="payload-value" for="payload-slider">1 TB</output></div>
             <input id="payload-slider" type="range" min="1" max="24" value="1" step="1">
+          </div>
+          <div class="payload-traffic" id="payload-traffic">
+            <div class="payload-traffic-heading">
+              <span><i class="traffic-dot ddr-dot"></i>DDR5 · 좁은 통로와 대기열</span>
+              <span><i class="traffic-dot hbm-dot"></i>HBM3E · 넓은 병렬 통로</span>
+            </div>
+            <div class="payload-flow-stage">
+              <canvas id="payload-flow-canvas" aria-label="데이터 크기에 따라 DDR5 대기열과 HBM 병렬 패킷 수가 증가하는 애니메이션"></canvas>
+              <div class="payload-flow-label ddr-flow-label"><strong>DDR5</strong><small>2개 차선으로 축약 표시</small></div>
+              <div class="payload-flow-label hbm-flow-label"><strong>HBM3E</strong><small>16개 차선으로 축약 표시 · 실제 1,024-bit</small></div>
+              <div class="memory-endpoint" aria-hidden="true"><span>AI</span><small>COMPUTE</small></div>
+            </div>
+            <div class="payload-live-stats" aria-live="polite">
+              <span>화면 속 패킷 <strong id="payload-packet-count">18</strong></span>
+              <span>DDR 대기열 <strong id="ddr-queue-count">1 TB</strong></span>
+              <span>HBM 병렬 점유 <strong id="hbm-lane-load">4%</strong></span>
+            </div>
           </div>
           <div class="race-results" aria-live="polite">
             <div class="race-row ddr-race">
