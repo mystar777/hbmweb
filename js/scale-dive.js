@@ -16,6 +16,8 @@ window.HBM.ScaleDive = class {
     this.video = document.getElementById('scale-video-source');
     this.poster = new Image();
     this.poster.src = 'assets/scale-dive/microscope-source-poster.jpg';
+    this.frameCache = document.createElement('canvas');
+    this.frameCacheCtx = this.frameCache.getContext('2d', { alpha: false });
 
     this.stages = [
       {
@@ -56,6 +58,9 @@ window.HBM.ScaleDive = class {
     this.scrubTimer = null;
     this.progressAnimationId = null;
     this.lastProgressTick = 0;
+    this.pendingSeekTime = null;
+    this.seekFrameId = null;
+    this.rangeDragging = false;
 
     this.cacheUI();
     this.bindVideo();
@@ -76,7 +81,7 @@ window.HBM.ScaleDive = class {
       meter: document.getElementById('scope-meter-fill'),
       hint: document.getElementById('scale-gesture-hint'),
       buttons: Array.from(document.querySelectorAll('[data-scale-stage]')),
-      scrubFill: document.getElementById('scope-scrub-fill'),
+      scrubRange: document.getElementById('scope-scrub-range'),
       frameReadout: document.getElementById('scope-frame-readout'),
     };
   }
@@ -89,6 +94,8 @@ window.HBM.ScaleDive = class {
       if (!this.videoReady) return;
       this.video.pause();
       this.frameCount = Math.max(1, Math.round(this.video.duration * this.frameRate));
+      if (this.ui.scrubRange) this.ui.scrubRange.max = String(Math.max(1, this.frameCount - 1));
+      this.cacheVideoFrame();
       this.seekVideo(true);
       this.render();
     };
@@ -96,11 +103,12 @@ window.HBM.ScaleDive = class {
     this.video.addEventListener('loadedmetadata', ready);
     this.video.addEventListener('loadeddata', ready);
     this.video.addEventListener('seeked', () => {
-      if (typeof this.video.requestVideoFrameCallback === 'function') {
-        this.video.requestVideoFrameCallback(() => this.render());
-      } else {
-        this.render();
-      }
+      // `seeked` means the requested frame is decoded and drawable. Rendering
+      // here is more reliable for a paused video than waiting for a future
+      // requestVideoFrameCallback, which some browsers never dispatch.
+      this.cacheVideoFrame();
+      this.render();
+      this.flushPendingSeek();
     });
     this.video.addEventListener('error', () => {
       this.container.classList.add('video-fallback');
@@ -124,8 +132,10 @@ window.HBM.ScaleDive = class {
 
       event.preventDefault();
       event.stopPropagation();
-      const step = Math.max(-120, Math.min(120, deltaPixels)) * 0.00002;
-      const targetLead = 0.025;
+      const direction = Math.sign(deltaPixels);
+      const magnitude = Math.max(28, Math.min(120, Math.abs(deltaPixels)));
+      const step = direction * magnitude * 0.0001;
+      const targetLead = 0.055;
       const requested = this.targetProgress + step;
       const bounded = Math.max(this.progress - targetLead, Math.min(this.progress + targetLead, requested));
       this.setProgress(bounded);
@@ -173,6 +183,28 @@ window.HBM.ScaleDive = class {
         this.markScrubbing();
       });
     });
+
+    if (this.ui.scrubRange) {
+      const beginRangeDrag = () => {
+        this.rangeDragging = true;
+        this.container.classList.add('is-range-dragging');
+        this.markScrubbing();
+      };
+      const endRangeDrag = () => {
+        this.rangeDragging = false;
+        this.container.classList.remove('is-range-dragging');
+      };
+
+      this.ui.scrubRange.addEventListener('pointerdown', beginRangeDrag);
+      this.ui.scrubRange.addEventListener('pointerup', endRangeDrag);
+      this.ui.scrubRange.addEventListener('pointercancel', endRangeDrag);
+      this.ui.scrubRange.addEventListener('input', () => {
+        const max = Math.max(1, Number(this.ui.scrubRange.max));
+        this.setProgress(Number(this.ui.scrubRange.value) / max, true);
+        this.markScrubbing();
+      });
+      this.ui.scrubRange.addEventListener('change', endRangeDrag);
+    }
   }
 
   normalizedWheelDelta(event) {
@@ -207,8 +239,15 @@ window.HBM.ScaleDive = class {
     return Math.max(0, Math.min(1, value));
   }
 
-  setProgress(progress) {
+  setProgress(progress, immediate = false) {
     const next = this.clamp(progress);
+    if (immediate) {
+      this.targetProgress = next;
+      this.progress = next;
+      this.seekVideo();
+      this.render();
+      return;
+    }
     if (Math.abs(next - this.targetProgress) < 0.000001) return;
     this.targetProgress = next;
     this.startProgressAnimation();
@@ -253,10 +292,38 @@ window.HBM.ScaleDive = class {
     this.videoReady = true;
     this.video.pause();
     const end = Math.max(0, this.video.duration - 1 / this.frameRate);
-    const wanted = this.progress * end;
-    if (force || Math.abs(this.video.currentTime - wanted) > 1 / (this.frameRate * 2)) {
+    this.pendingSeekTime = this.progress * end;
+    this.flushPendingSeek(force);
+  }
+
+  flushPendingSeek(force = false) {
+    if (!this.video || this.pendingSeekTime === null || this.video.seeking) return;
+
+    const wanted = this.pendingSeekTime;
+    const threshold = 1 / (this.frameRate * 2);
+    if (!force && Math.abs(this.video.currentTime - wanted) <= threshold) return;
+
+    // Preserve the last decoded picture while the browser fetches/decodes the
+    // next range. This prevents the poster from flashing during reverse seeks.
+    this.cacheVideoFrame();
+    this.pendingSeekTime = null;
+    if (this.seekFrameId) cancelAnimationFrame(this.seekFrameId);
+    this.seekFrameId = requestAnimationFrame(() => {
+      this.seekFrameId = null;
       this.video.currentTime = wanted;
+    });
+  }
+
+  cacheVideoFrame() {
+    if (!this.video || !this.frameCacheCtx || this.video.readyState < 2 || this.video.seeking) return;
+    const width = this.video.videoWidth;
+    const height = this.video.videoHeight;
+    if (!width || !height) return;
+    if (this.frameCache.width !== width || this.frameCache.height !== height) {
+      this.frameCache.width = width;
+      this.frameCache.height = height;
     }
+    this.frameCacheCtx.drawImage(this.video, 0, 0, width, height);
   }
 
   start() {
@@ -322,12 +389,17 @@ window.HBM.ScaleDive = class {
     ctx.clip();
 
     let source = null;
-    if (this.video && this.video.readyState >= 2 && Number.isFinite(this.video.duration)) source = this.video;
-    else if (this.poster.complete && this.poster.naturalWidth) source = this.poster;
+    if (this.video && this.video.readyState >= 2 && !this.video.seeking && Number.isFinite(this.video.duration)) {
+      source = this.video;
+    } else if (this.frameCache.width && this.frameCache.height) {
+      source = this.frameCache;
+    } else if (this.poster.complete && this.poster.naturalWidth) {
+      source = this.poster;
+    }
 
     if (source) {
-      const sourceWidth = source.videoWidth || source.naturalWidth;
-      const sourceHeight = source.videoHeight || source.naturalHeight;
+      const sourceWidth = source.videoWidth || source.naturalWidth || source.width;
+      const sourceHeight = source.videoHeight || source.naturalHeight || source.height;
       const side = Math.min(sourceWidth, sourceHeight);
       const sx = (sourceWidth - side) / 2;
       const sy = (sourceHeight - side) / 2;
@@ -403,7 +475,11 @@ window.HBM.ScaleDive = class {
     if (this.ui.comparison) this.ui.comparison.textContent = stage.comparison;
     if (this.ui.comparisonNote) this.ui.comparisonNote.textContent = stage.comparisonNote;
     if (this.ui.meter) this.ui.meter.style.height = `${this.progress * 100}%`;
-    if (this.ui.scrubFill) this.ui.scrubFill.style.width = `${this.progress * 100}%`;
+    if (this.ui.scrubRange) {
+      const max = Math.max(1, Number(this.ui.scrubRange.max));
+      this.ui.scrubRange.style.setProperty('--scope-progress', `${this.progress * 100}%`);
+      if (!this.rangeDragging) this.ui.scrubRange.value = String(Math.round(this.progress * max));
+    }
     if (this.ui.frameReadout) this.ui.frameReadout.textContent = frameLabel;
     if (this.ui.levelName) {
       this.ui.levelName.innerHTML = `<span class="level-index">${String(state.index + 1).padStart(2, '0')} / 05 · 120 FPS ${frameLabel}</span><strong>${stage.name}</strong>`;
