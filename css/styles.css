@@ -1263,6 +1263,7 @@ body {
 }
 
 .scope-scrub-status {
+  --scope-progress: 0%;
   position: absolute;
   left: 39%;
   bottom: 3.5vh;
@@ -1276,25 +1277,70 @@ body {
   font-family: var(--font-display);
   font-size: 0.56rem;
   letter-spacing: 0.14em;
+  pointer-events: auto;
+}
+
+.scope-scrub-status label,
+.scope-scrub-status output {
   pointer-events: none;
 }
 
-.scope-scrub-status i {
-  position: relative;
-  display: block;
-  height: 3px;
-  overflow: hidden;
-  border-radius: 99px;
-  background: rgba(99, 197, 219, 0.16);
+.scope-scrub-status input[type='range'] {
+  width: 100%;
+  height: 18px;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: ew-resize;
+  touch-action: none;
+  background: transparent;
 }
 
-.scope-scrub-status i b {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 0;
-  border-radius: inherit;
+.scope-scrub-status input[type='range']::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 99px;
+  background:
+    linear-gradient(90deg, #38aee7, #61f3ff) 0 / var(--scope-progress) 100% no-repeat,
+    rgba(99, 197, 219, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(112, 224, 246, 0.1);
+}
+
+.scope-scrub-status input[type='range']::-webkit-slider-thumb {
+  width: 17px;
+  height: 17px;
+  margin-top: -5.5px;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 2px solid #dffbff;
+  border-radius: 50%;
+  background: #23d9ff;
+  box-shadow: 0 0 0 4px rgba(35, 217, 255, 0.15), 0 0 16px rgba(35, 217, 255, 0.75);
+}
+
+.scope-scrub-status input[type='range']::-moz-range-track {
+  height: 6px;
+  border-radius: 99px;
+  background: rgba(99, 197, 219, 0.2);
+}
+
+.scope-scrub-status input[type='range']::-moz-range-progress {
+  height: 6px;
+  border-radius: 99px;
   background: linear-gradient(90deg, #38aee7, #61f3ff);
-  box-shadow: 0 0 10px rgba(71, 222, 255, 0.7);
+}
+
+.scope-scrub-status input[type='range']::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #dffbff;
+  border-radius: 50%;
+  background: #23d9ff;
+  box-shadow: 0 0 0 4px rgba(35, 217, 255, 0.15), 0 0 16px rgba(35, 217, 255, 0.75);
+}
+
+.scope-scrub-status input[type='range']:focus-visible {
+  outline: 2px solid rgba(97, 243, 255, 0.9);
+  outline-offset: 4px;
 }
 
 .scope-scrub-status output {

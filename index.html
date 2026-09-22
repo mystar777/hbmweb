@@ -187,11 +187,12 @@
           </div>
           <div class="scale-gesture-hint" id="scale-gesture-hint">
             <span class="gesture-mouse" aria-hidden="true"></span>
-            원 안에서만 휠을 굴려 확대·축소하세요
+            원 안에서 휠을 굴리거나 아래 진행 바를 드래그하세요
           </div>
-          <div class="scope-scrub-status" id="scope-scrub-status" aria-live="polite">
-            <span>SCROLL SCRUB</span>
-            <i aria-hidden="true"><b id="scope-scrub-fill"></b></i>
+          <div class="scope-scrub-status" id="scope-scrub-status">
+            <label for="scope-scrub-range">SCROLL / DRAG</label>
+            <input id="scope-scrub-range" type="range" min="0" max="3923" value="0" step="1"
+              aria-label="현미경 영상 진행 위치">
             <output id="scope-frame-readout">FRAME 0001 / 3924</output>
           </div>
           <div class="scale-info-panel" id="scale-info">
