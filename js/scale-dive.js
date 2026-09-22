@@ -1,7 +1,9 @@
 /**
  * HBM Scale Dive
  * A scroll- and drag-driven circular microscope that travels from the package
- * scale to a nanometre-class DRAM cell.
+ * scale to a nanometre-class DRAM cell. The feed is rendered as a nested
+ * deep-zoom scene: every scale is a physical plane inside the previous one,
+ * so the camera never swaps one still for another.
  */
 window.HBM = window.HBM || {};
 
@@ -10,6 +12,8 @@ window.HBM.ScaleDive = class {
     this.container = container;
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
+    this.planeCanvas = document.createElement('canvas');
+    this.planeCtx = this.planeCanvas.getContext('2d');
     this.options = Object.assign({
       colors: {
         primary: '#6be7ff',
@@ -250,10 +254,14 @@ window.HBM.ScaleDive = class {
     const ctx = this.ctx;
     const dpr = Math.max(window.devicePixelRatio || 1, 1);
     const state = this.stageState();
-    // Keep both neighboring scales visible across most of the journey. This
-    // makes the microscope feel like it is continuously diving instead of
-    // cutting to a new still whenever a stage boundary is crossed.
-    const blend = state.nextIndex === state.index ? 0 : this.smoothstep(0.08, 0.92, state.local);
+    // The camera magnification is continuous between the calibrated HBM
+    // reference scales. The renderer below uses it to move through one
+    // nested scene rather than blending a pair of stage images.
+    const cameraMagnification = this.interpolateLog(
+      this.stages[state.index].magnification,
+      this.stages[state.nextIndex].magnification,
+      state.local
+    );
 
     ctx.save();
     ctx.clearRect(0, 0, this.width, this.height);
@@ -266,8 +274,7 @@ window.HBM.ScaleDive = class {
     ctx.clip();
 
     const motionBlur = Math.min(Math.abs(this.velocity) * 360, 1.35) * dpr;
-    this.drawStageImage(ctx, state.index, state.local, 1 - blend, motionBlur, false);
-    if (blend > 0) this.drawStageImage(ctx, state.nextIndex, blend, blend, motionBlur, true);
+    this.drawDeepZoomFeed(ctx, state, cameraMagnification, motionBlur);
     this.drawDiveParticles(ctx, state);
     this.drawOpticalTexture(ctx, state);
     ctx.restore();
@@ -305,38 +312,122 @@ window.HBM.ScaleDive = class {
     ctx.restore();
   }
 
-  drawStageImage(ctx, index, local, opacity, blur, incoming) {
-    const image = this.images[index];
-    if (!image || !image.complete || !image.naturalWidth) {
-      this.drawFallback(ctx, index, opacity);
-      return;
+  drawDeepZoomFeed(ctx, state, cameraMagnification, blur) {
+    const baseSize = this.viewportRadius * 2.06;
+    const motion = this.reducedMotion ? 0 : this.time;
+
+    // Draw the physical planes from largest to smallest. At ×1 the package
+    // plane fills the lens; at ×35 the DRAM stack plane naturally fills it;
+    // the camera simply keeps travelling through the same coordinate space.
+    this.stages.forEach((stage, index) => {
+      const image = this.images[index];
+      if (!image || !image.complete || !image.naturalWidth) {
+        this.drawFallback(ctx, index, 1);
+        return;
+      }
+
+      const planeScale = cameraMagnification / stage.magnification;
+      if (planeScale < 0.006) return;
+
+      const fullSize = baseSize * planeScale;
+      // Once a parent plane is much larger than the lens, a capped draw is
+      // visually identical but avoids asking the GPU for million-pixel quads.
+      const drawSize = Math.min(fullSize, baseSize * 12);
+      const sourceZoom = Math.max(1, fullSize / drawSize);
+      const sourceWidth = image.naturalWidth / sourceZoom;
+      const sourceHeight = image.naturalHeight / sourceZoom;
+      const focal = stage.focal || { x: 0.5, y: 0.5 };
+      const wanderX = Math.sin(motion * 0.42 + index * 1.7) * sourceWidth * 0.018;
+      const wanderY = Math.cos(motion * 0.36 + index * 1.3) * sourceHeight * 0.014;
+      const sourceX = Math.max(0, Math.min(image.naturalWidth - sourceWidth, image.naturalWidth * focal.x - sourceWidth / 2 + wanderX));
+      const sourceY = Math.max(0, Math.min(image.naturalHeight - sourceHeight, image.naturalHeight * focal.y - sourceHeight / 2 + wanderY));
+
+      const visibility = index === 0 ? 1 : this.smoothstep(0.012, 0.14, planeScale);
+      const distanceFromFocus = Math.abs(Math.log(Math.max(planeScale, 0.001)));
+      const focusBlur = Math.min(2.8, distanceFromFocus * 0.26);
+      const drift = Math.sin(motion * 0.7 + index) * this.viewportRadius * (0.006 + index * 0.002);
+      const breathing = 1 + Math.sin(motion * 0.5 + index * 0.9) * 0.004;
+
+      const planeRotation = Math.sin(motion * 0.28 + index) * 0.0025;
+      const planeX = this.centerX + drift;
+      const planeY = this.centerY - drift * 0.45;
+      const planeFilter = `saturate(${1.06 + index * 0.03}) contrast(1.08) blur(${blur + focusBlur}px)`;
+
+      // A soft alpha edge prevents the nested plane from reading as a pasted
+      // square. The parent texture remains visible at the focus boundary,
+      // like a real optical field falling out of focus.
+      if (planeScale > 0.06 && planeScale < 0.92) {
+        this.drawSoftFeedPlane(
+          ctx,
+          image,
+          sourceX,
+          sourceY,
+          sourceWidth,
+          sourceHeight,
+          drawSize,
+          planeX,
+          planeY,
+          breathing,
+          planeRotation,
+          visibility,
+          planeFilter
+        );
+      } else {
+        ctx.save();
+        ctx.globalAlpha = visibility;
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.filter = planeFilter;
+        ctx.translate(planeX, planeY);
+        ctx.rotate(planeRotation);
+        ctx.scale(breathing, breathing);
+        ctx.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, -drawSize / 2, -drawSize / 2, drawSize, drawSize);
+        ctx.restore();
+      }
+    });
+  }
+
+  drawSoftFeedPlane(ctx, image, sourceX, sourceY, sourceWidth, sourceHeight, size, x, y, breathing, rotation, opacity, filter) {
+    const padding = Math.min(Math.max(size * 0.1, 10), 72);
+    const planeSize = Math.ceil(size + padding * 2);
+    if (this.planeCanvas.width !== planeSize || this.planeCanvas.height !== planeSize) {
+      this.planeCanvas.width = planeSize;
+      this.planeCanvas.height = planeSize;
     }
 
-    const baseSize = this.viewportRadius * 2.06;
-    // Both feeds stay full-frame inside the lens. The outgoing feed pushes
-    // through the focal plane while the incoming feed racks into focus; this
-    // reads as a continuous optical dive instead of a small image being
-    // revealed on top of another still.
-    const zoom = incoming ? 0.76 + local * 0.24 : 1 + local * 0.72;
-    const drift = Math.sin(this.time * 0.7 + index) * this.viewportRadius * 0.018;
-    const focal = this.stages[index].focal || { x: 0.5, y: 0.5 };
-    const sourceZoom = 1 + local * 0.24;
-    const sourceWidth = image.naturalWidth / sourceZoom;
-    const sourceHeight = image.naturalHeight / sourceZoom;
-    const wanderX = Math.sin(this.time * 0.42 + index * 1.7) * sourceWidth * 0.018;
-    const wanderY = Math.cos(this.time * 0.36 + index * 1.3) * sourceHeight * 0.014;
-    const sourceX = Math.max(0, Math.min(image.naturalWidth - sourceWidth, image.naturalWidth * focal.x - sourceWidth / 2 + wanderX));
-    const sourceY = Math.max(0, Math.min(image.naturalHeight - sourceHeight, image.naturalHeight * focal.y - sourceHeight / 2 + wanderY));
+    const planeCtx = this.planeCtx;
+    planeCtx.clearRect(0, 0, planeSize, planeSize);
+    planeCtx.save();
+    planeCtx.globalAlpha = opacity;
+    planeCtx.imageSmoothingEnabled = true;
+    planeCtx.imageSmoothingQuality = 'high';
+    planeCtx.filter = filter;
+    planeCtx.translate(planeSize / 2, planeSize / 2);
+    planeCtx.rotate(rotation);
+    planeCtx.scale(breathing, breathing);
+    planeCtx.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, -size / 2, -size / 2, size, size);
+    planeCtx.restore();
 
-    ctx.save();
-    ctx.globalAlpha = opacity;
-    const focusHunt = incoming ? (1 - this.smoothstep(0.12, 0.82, local)) * 0.55 : 0;
-    ctx.filter = `saturate(${1.06 + index * 0.03}) contrast(1.08) blur(${blur + focusHunt}px)`;
-    ctx.translate(this.centerX + drift, this.centerY - drift * 0.45);
-    ctx.rotate(Math.sin(this.time * 0.28 + index) * 0.0025);
-    ctx.scale(zoom, zoom);
-    ctx.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, -baseSize / 2, -baseSize / 2, baseSize, baseSize);
-    ctx.restore();
+    // Fade only the temporary plane, leaving its parent feed untouched.
+    planeCtx.save();
+    planeCtx.globalCompositeOperation = 'destination-in';
+    const mask = planeCtx.createRadialGradient(
+      planeSize / 2,
+      planeSize / 2,
+      size * 0.36,
+      planeSize / 2,
+      planeSize / 2,
+      size * 0.58 + padding
+    );
+    mask.addColorStop(0, 'rgba(0,0,0,1)');
+    mask.addColorStop(0.78, 'rgba(0,0,0,0.98)');
+    mask.addColorStop(0.96, 'rgba(0,0,0,0.38)');
+    mask.addColorStop(1, 'rgba(0,0,0,0)');
+    planeCtx.fillStyle = mask;
+    planeCtx.fillRect(0, 0, planeSize, planeSize);
+    planeCtx.restore();
+
+    ctx.drawImage(this.planeCanvas, x - planeSize / 2, y - planeSize / 2);
   }
 
   drawFallback(ctx, index, opacity) {
