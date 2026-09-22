@@ -166,5 +166,5 @@ window.HBM = window.HBM || {};
 
   // ---- Boot ----
   window.HBM.App = App;
-  new App();
+  window.HBM.app = new App();
 })();
