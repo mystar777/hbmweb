@@ -24,6 +24,11 @@ window.HBM = window.HBM || {};
       this.hbmCtx = null;
       this.flowParticles = { ddr: [], hbm: [] };
       this.flowAnimId = null;
+      this.payloadCanvas = null;
+      this.payloadCtx = null;
+      this.payloadTb = 1;
+      this.payloadPhase = 0;
+      this.lastFlowFrame = 0;
 
       // Counter animations
       this.countersAnimated = false;
@@ -248,6 +253,9 @@ window.HBM = window.HBM || {};
       const hbmTime = document.getElementById('hbm-time');
       const ddrBar = document.getElementById('ddr-race-bar');
       const hbmBar = document.getElementById('hbm-race-bar');
+      const packetCount = document.getElementById('payload-packet-count');
+      const queueCount = document.getElementById('ddr-queue-count');
+      const laneLoad = document.getElementById('hbm-lane-load');
       if (!slider) return;
 
       const formatSeconds = (seconds) => seconds >= 10 ? `${seconds.toFixed(1)}초` : `${seconds.toFixed(2)}초`;
@@ -261,6 +269,13 @@ window.HBM = window.HBM || {};
         if (hbmTime) hbmTime.textContent = formatSeconds(hbmSeconds);
         if (ddrBar) ddrBar.style.transform = `scaleX(${(51.2 / 1180).toFixed(3)})`;
         if (hbmBar) hbmBar.style.transform = 'scaleX(1)';
+        this.payloadTb = payloadTb;
+        const visiblePackets = 18 + Math.round((payloadTb - 1) * 3.45);
+        if (packetCount) packetCount.textContent = visiblePackets.toLocaleString();
+        if (queueCount) queueCount.textContent = `${payloadTb} TB`;
+        if (laneLoad) laneLoad.textContent = `${Math.round(4 + (payloadTb / 24) * 94)}%`;
+        slider.style.setProperty('--payload-progress', `${((payloadTb - 1) / 23) * 100}%`);
+        this.drawPayloadFlow(performance.now());
       };
 
       slider.addEventListener('input', update);
@@ -302,6 +317,7 @@ window.HBM = window.HBM || {};
     initDataFlowCanvases() {
       this.ddrCanvas = document.getElementById('ddr-canvas');
       this.hbmCanvas = document.getElementById('hbm-canvas');
+      this.payloadCanvas = document.getElementById('payload-flow-canvas');
 
       if (this.ddrCanvas && this.hbmCanvas) {
         this.ddrCtx = this.ddrCanvas.getContext('2d');
@@ -318,6 +334,10 @@ window.HBM = window.HBM || {};
 
         setCanvasSize(this.ddrCanvas);
         setCanvasSize(this.hbmCanvas);
+        if (this.payloadCanvas) {
+          this.payloadCtx = this.payloadCanvas.getContext('2d');
+          setCanvasSize(this.payloadCanvas);
+        }
 
         // Initialize DDR particles (2 lanes, slow)
         const ddrW = this.ddrCanvas.width;
@@ -346,14 +366,22 @@ window.HBM = window.HBM || {};
             lane: lane,
           });
         }
+
+        if (this.payloadCanvas && window.ResizeObserver) {
+          this.payloadResizeObserver = new ResizeObserver(() => {
+            setCanvasSize(this.payloadCanvas);
+            this.drawPayloadFlow(performance.now());
+          });
+          this.payloadResizeObserver.observe(this.payloadCanvas.parentElement);
+        }
       }
     }
 
     startDataFlowAnimation() {
       if (this.flowAnimId) return;
 
-      const animate = () => {
-        this.drawDataFlow();
+      const animate = (now) => {
+        this.drawDataFlow(now);
         this.flowAnimId = requestAnimationFrame(animate);
       };
       this.flowAnimId = requestAnimationFrame(animate);
@@ -366,7 +394,7 @@ window.HBM = window.HBM || {};
       }
     }
 
-    drawDataFlow() {
+    drawDataFlow(now = performance.now()) {
       if (!this.ddrCtx || !this.hbmCtx) return;
 
       // --- DDR (slow, 2 lanes) ---
@@ -434,6 +462,110 @@ window.HBM = window.HBM || {};
       });
       hbmCtx.globalCompositeOperation = 'source-over';
       hbmCtx.shadowBlur = 0;
+      this.drawPayloadFlow(now);
+    }
+
+    drawPayloadFlow(now = performance.now()) {
+      if (!this.payloadCtx || !this.payloadCanvas) return;
+      const ctx = this.payloadCtx;
+      const width = this.payloadCanvas.width;
+      const height = this.payloadCanvas.height;
+      if (!width || !height) return;
+
+      const delta = this.lastFlowFrame ? Math.min(now - this.lastFlowFrame, 50) : 16;
+      this.lastFlowFrame = now;
+      const load = Math.max(0, Math.min(1, (this.payloadTb - 1) / 23));
+      this.payloadPhase = (this.payloadPhase + delta * (0.00022 + load * 0.00042)) % 1;
+
+      ctx.clearRect(0, 0, width, height);
+      const dividerY = height * 0.5;
+      ctx.fillStyle = 'rgba(97, 134, 157, 0.035)';
+      ctx.fillRect(0, 0, width, dividerY);
+      ctx.fillStyle = 'rgba(0, 212, 255, 0.028)';
+      ctx.fillRect(0, dividerY, width, dividerY);
+      ctx.strokeStyle = 'rgba(122, 207, 227, 0.12)';
+      ctx.lineWidth = Math.max(1, window.devicePixelRatio || 1);
+      ctx.beginPath();
+      ctx.moveTo(0, dividerY);
+      ctx.lineTo(width, dividerY);
+      ctx.stroke();
+
+      const left = width * 0.18;
+      const right = width * 0.91;
+      const travel = right - left;
+      const ddrLaneY = [height * 0.31, height * 0.40];
+      const hbmTop = height * 0.61;
+      const hbmBottom = height * 0.91;
+      const hbmLanes = 16;
+
+      ctx.lineWidth = Math.max(1, width * 0.0012);
+      ctx.setLineDash([width * 0.012, width * 0.012]);
+      ddrLaneY.forEach((y) => {
+        ctx.strokeStyle = 'rgba(148, 170, 188, 0.18)';
+        ctx.beginPath();
+        ctx.moveTo(left, y);
+        ctx.lineTo(right, y);
+        ctx.stroke();
+      });
+      for (let lane = 0; lane < hbmLanes; lane++) {
+        const y = hbmTop + ((hbmBottom - hbmTop) * lane) / (hbmLanes - 1);
+        ctx.strokeStyle = 'rgba(42, 195, 227, 0.11)';
+        ctx.beginPath();
+        ctx.moveTo(left, y);
+        ctx.lineTo(right, y);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+
+      // DDR: two narrow lanes plus a queue that visibly grows with payload.
+      const ddrPackets = 5 + Math.round(load * 15);
+      const queueDepth = 2 + Math.round(load * 12);
+      for (let queue = 0; queue < queueDepth; queue++) {
+        const column = queue % 6;
+        const row = Math.floor(queue / 6);
+        const x = left - width * 0.025 - column * width * 0.018;
+        const y = height * 0.335 + row * height * 0.052;
+        ctx.fillStyle = `rgba(126, 151, 174, ${0.3 + load * 0.42})`;
+        ctx.fillRect(x, y, width * 0.012, height * 0.028);
+      }
+      for (let i = 0; i < ddrPackets; i++) {
+        const lane = i % 2;
+        const position = (this.payloadPhase * 0.38 + i / ddrPackets) % 1;
+        const x = left + travel * position;
+        const y = ddrLaneY[lane];
+        ctx.fillStyle = 'rgba(148, 171, 191, 0.84)';
+        ctx.shadowBlur = width * 0.007;
+        ctx.shadowColor = 'rgba(149, 180, 207, 0.55)';
+        ctx.fillRect(x, y - height * 0.014, width * (0.014 + load * 0.008), height * 0.028);
+      }
+
+      // HBM: data volume occupies more parallel lanes instead of waiting.
+      const hbmPackets = 13 + Math.round(load * 72);
+      const activeLanes = Math.max(2, Math.min(hbmLanes, Math.round(2 + load * 14)));
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < hbmPackets; i++) {
+        const lane = i % activeLanes;
+        const position = (this.payloadPhase * 1.8 + (i * 0.61803398875) % 1) % 1;
+        const x = left + travel * position;
+        const y = hbmTop + ((hbmBottom - hbmTop) * lane) / Math.max(activeLanes - 1, 1);
+        const pulse = 0.68 + Math.sin(now * 0.006 + i) * 0.2;
+        ctx.fillStyle = `rgba(0, 218, 255, ${pulse})`;
+        ctx.shadowBlur = width * 0.011;
+        ctx.shadowColor = '#00d4ff';
+        ctx.fillRect(x, y - height * 0.009, width * 0.012, height * 0.018);
+      }
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.shadowBlur = 0;
+
+      // Source memory blocks at the left make the changing payload tangible.
+      const blockHeight = height * 0.11;
+      const sourceGradient = ctx.createLinearGradient(width * 0.035, 0, left, 0);
+      sourceGradient.addColorStop(0, 'rgba(37, 63, 79, 0.82)');
+      sourceGradient.addColorStop(1, `rgba(0, 172, 210, ${0.22 + load * 0.42})`);
+      ctx.fillStyle = sourceGradient;
+      ctx.fillRect(width * 0.035, dividerY - blockHeight / 2, width * 0.11, blockHeight);
+      ctx.strokeStyle = 'rgba(101, 216, 240, 0.35)';
+      ctx.strokeRect(width * 0.035, dividerY - blockHeight / 2, width * 0.11, blockHeight);
     }
 
     // ---- Counter Animations ----
@@ -495,6 +627,7 @@ window.HBM = window.HBM || {};
     destroy() {
       this.observers.forEach((obs) => obs.disconnect());
       this.observers = [];
+      if (this.payloadResizeObserver) this.payloadResizeObserver.disconnect();
       this.stopDataFlowAnimation();
     }
 
