@@ -574,7 +574,7 @@ body {
    SCENE 4: SCALE DIVE
    ============================================================ */
 .scene-scale-dive {
-  min-height: 300vh; /* Extra height for scroll-driven zoom */
+  min-height: 100vh;
   background: var(--bg-deep);
   position: relative;
 }
@@ -1289,7 +1289,8 @@ body {
 
 /* Cinematic scope */
 .scene-scale-dive {
-  min-height: 520vh;
+  min-height: 100vh;
+  height: 100vh;
   background: #030406;
   overflow: visible;
   display: block;
@@ -1298,6 +1299,7 @@ body {
 .scale-dive-content {
   width: 100%;
   max-width: none;
+  height: 100vh;
   padding: 0;
 }
 
@@ -1343,7 +1345,7 @@ body {
 
 .scene-scale-dive.is-active-scene .scale-header,
 .scene-scale-dive.is-active-scene .scale-viewport-container {
-  position: fixed;
+  position: absolute;
 }
 
 #scale-canvas {
@@ -1352,8 +1354,8 @@ body {
   width: 100%;
   height: 100%;
   border-radius: 0;
-  cursor: ns-resize;
-  touch-action: pan-x;
+  cursor: default;
+  touch-action: pan-y;
 }
 
 .scale-video-source {
@@ -1366,6 +1368,10 @@ body {
 
 .scene-scale-dive.is-dragging #scale-canvas {
   cursor: grabbing;
+}
+
+.scene-scale-dive.is-lens-hover:not(.is-dragging) #scale-canvas {
+  cursor: ns-resize;
 }
 
 .scale-level-name {
@@ -1395,7 +1401,7 @@ body {
 .scale-gesture-hint {
   position: absolute;
   left: 39%;
-  bottom: 5vh;
+  bottom: 8.5vh;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1410,6 +1416,52 @@ body {
 .scale-gesture-hint.is-hidden {
   opacity: 0;
   transform: translate(-50%, 12px);
+}
+
+.scope-scrub-status {
+  position: absolute;
+  left: 39%;
+  bottom: 3.5vh;
+  z-index: 11;
+  display: grid;
+  grid-template-columns: auto minmax(90px, 180px) auto;
+  align-items: center;
+  gap: 10px;
+  transform: translateX(-50%);
+  color: rgba(174, 218, 228, 0.58);
+  font-family: var(--font-display);
+  font-size: 0.56rem;
+  letter-spacing: 0.14em;
+  pointer-events: none;
+}
+
+.scope-scrub-status i {
+  position: relative;
+  display: block;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(99, 197, 219, 0.16);
+}
+
+.scope-scrub-status i b {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #38aee7, #61f3ff);
+  box-shadow: 0 0 10px rgba(71, 222, 255, 0.7);
+}
+
+.scope-scrub-status output {
+  min-width: 110px;
+  color: rgba(213, 242, 248, 0.7);
+  font: inherit;
+  letter-spacing: 0.08em;
+}
+
+.scene-scale-dive.is-scrubbing .scope-scrub-status {
+  color: #c9f7ff;
 }
 
 .gesture-mouse {
@@ -2083,7 +2135,12 @@ body {
 
   .scale-gesture-hint {
     left: 50%;
-    bottom: 31vh;
+    bottom: 35vh;
+  }
+
+  .scope-scrub-status {
+    left: 50%;
+    bottom: 30.5vh;
   }
 
   .scale-info-panel {
@@ -2128,7 +2185,8 @@ body {
 
 @media (max-width: 640px) {
   .scene-scale-dive {
-    min-height: 560vh;
+    min-height: 100svh;
+    height: 100svh;
   }
 
   .scale-header {
@@ -2144,10 +2202,18 @@ body {
   }
 
   .scale-gesture-hint {
-    bottom: 35vh;
+    bottom: 37vh;
     width: max-content;
     max-width: 80vw;
     font-size: 0.68rem;
+  }
+
+  .scope-scrub-status {
+    bottom: 33.5vh;
+    grid-template-columns: auto minmax(58px, 1fr) auto;
+    width: min(86vw, 390px);
+    gap: 7px;
+    font-size: 0.48rem;
   }
 
   .scale-info-panel {

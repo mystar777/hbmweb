@@ -169,22 +169,8 @@ window.HBM = window.HBM || {};
         fill.style.width = (progress * 100) + '%';
       }
 
-      // Scale Dive scroll-driven zoom (Scene 3)
-      const scaleDiveSection = document.getElementById('scene-3');
-      if (scaleDiveSection) {
-        // The microscope viewport is fixed while this long exhibit is active.
-        // Reading rect.top here therefore always returned 0 and every scroll
-        // event snapped the dive back to its first frame. Use document-space
-        // coordinates so scroll and drag share one stable progress source.
-        const sectionTop = scaleDiveSection.getBoundingClientRect().top + window.scrollY;
-        const sectionHeight = Math.max(scaleDiveSection.offsetHeight - viewportHeight, 1);
-        const sectionScroll = scrollY - sectionTop;
-        const scaleProgress = Math.max(0, Math.min(1, sectionScroll / sectionHeight));
-
-        if (this.scaleDive && this.activeSceneIndex === 3) {
-          this.scaleDive.setProgress(scaleProgress);
-        }
-      }
+      // Chapter 4 deliberately does not read page scroll position. Its video
+      // is scrubbed only by wheel/drag input that begins inside the lens.
     }
 
     // ---- Hands-on museum interactions ----

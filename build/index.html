@@ -173,71 +173,74 @@
         <div class="scale-header">
           <p class="scene-label fade-element">CHAPTER 04</p>
           <h2 class="scene-title fade-element" data-delay="200">나노의 세계로</h2>
-          <p class="scale-intro fade-element" data-delay="350">우주에서 도로 위 사람을 찾듯, HBM 패키지에서 단 하나의 메모리 셀까지 내려갑니다.</p>
+          <p class="scale-intro fade-element" data-delay="350">실제 5 nm 반도체 현미경 영상을 휠로 직접 앞뒤 탐색하며, 칩 전체에서 미세 배선까지 내려갑니다.</p>
         </div>
         <div class="scale-viewport-container" id="scale-viewport">
-          <canvas id="scale-canvas" aria-label="HBM 패키지에서 나노미터 DRAM 셀까지 확대하는 대화형 현미경"></canvas>
-          <video id="scale-video-source" class="scale-video-source" preload="auto" autoplay loop muted playsinline tabindex="-1" aria-hidden="true"
-            poster="assets/scale-dive/keyframes/01-package.png">
-            <source src="assets/scale-dive/hbm-microscope-dive.mp4" type="video/mp4">
+          <canvas id="scale-canvas" aria-label="실제 반도체 현미경 영상을 휠과 드래그로 앞뒤 탐색하는 대화형 스코프"></canvas>
+          <video id="scale-video-source" class="scale-video-source" preload="auto" muted playsinline tabindex="-1" aria-hidden="true"
+            poster="assets/scale-dive/microscope-source-poster.jpg">
+            <source src="assets/scale-dive/microscope-source-remastered.mp4" type="video/mp4">
           </video>
           <div class="scale-level-name" id="scale-level-name">
-            <span class="level-index">01 / 05</span>
-            <strong>HBM 패키지</strong>
+            <span class="level-index">01 / 05 · SOURCE FRAME 0001</span>
+            <strong>반도체 샘플</strong>
           </div>
           <div class="scale-gesture-hint" id="scale-gesture-hint">
             <span class="gesture-mouse" aria-hidden="true"></span>
-            스크롤하거나 원을 위로 드래그하세요
+            원 안에서만 휠을 굴려 확대·축소하세요
+          </div>
+          <div class="scope-scrub-status" id="scope-scrub-status" aria-live="polite">
+            <span>SCROLL SCRUB</span>
+            <i aria-hidden="true"><b id="scope-scrub-fill"></b></i>
+            <output id="scope-frame-readout">FRAME 0001 / 0981</output>
           </div>
           <div class="scale-info-panel" id="scale-info">
             <div class="scope-heading"><span class="scope-live-dot"></span>LIVE OPTICAL FEED</div>
             <div class="magnification" id="magnification">×1</div>
-            <div class="scope-readout-row"><span>시야 폭</span><strong id="current-size">35 mm</strong></div>
-            <div class="scope-readout-row"><span>관찰 대상</span><strong id="scope-target">패키지 전체</strong></div>
+            <div class="scope-readout-row"><span>시야 폭</span><strong id="current-size">60 μm</strong></div>
+            <div class="scope-readout-row"><span>관찰 대상</span><strong id="scope-target">칩 샘플 전체</strong></div>
             <div class="scope-meter" aria-hidden="true">
               <div class="scope-meter-track"><span id="scope-meter-fill"></span></div>
               <div class="scope-meter-labels"><span>mm</span><span>μm</span><span>nm</span></div>
             </div>
-            <p class="comparison-text" id="comparison-text">GPU 옆에 놓이는 3차원 메모리 묶음입니다.</p>
+            <p class="comparison-text" id="comparison-text">현미경 렌즈 안의 실제 반도체 샘플 전체를 보고 있습니다.</p>
             <div class="scope-comparison" aria-live="polite">
               <span class="scope-comparison-label">크기 비교</span>
-              <strong id="scope-comparison">손톱 3개를 나란히 놓은 폭</strong>
-              <small id="scope-comparison-note">×1 · 현재 시야 폭 약 35 mm</small>
+              <strong id="scope-comparison">머리카락 한 올과 비슷한 폭</strong>
+              <small id="scope-comparison-note">×1 · 시야 폭 약 60 μm · 머리카락 ≈ 70 μm</small>
             </div>
             <div class="scope-reference-ladder" id="scope-reference-ladder" aria-label="배율별 실제 크기 비교">
               <div class="scope-reference-heading"><span>REFERENCE SCALE</span><small>실제 크기 감각</small></div>
               <div class="scope-reference-item is-active" data-reference-index="0">
                 <span class="scope-reference-mag">×1</span>
-                <span class="scope-reference-copy"><strong>HBM 패키지</strong><small>35 mm · 손톱 3개 폭</small></span>
+                <span class="scope-reference-copy"><strong>칩 샘플</strong><small>60 μm · 머리카락 굵기</small></span>
               </div>
               <div class="scope-reference-item" data-reference-index="1">
-                <span class="scope-reference-mag">×35</span>
-                <span class="scope-reference-copy"><strong>적층 DRAM</strong><small>1 mm · 바늘구멍 2개</small></span>
+                <span class="scope-reference-mag">×6</span>
+                <span class="scope-reference-copy"><strong>다이 패턴</strong><small>10 μm · 적혈구 하나</small></span>
               </div>
               <div class="scope-reference-item" data-reference-index="2">
-                <span class="scope-reference-mag">×350</span>
-                <span class="scope-reference-copy"><strong>DRAM 다이</strong><small>100 μm · 머리카락 한 올</small></span>
+                <span class="scope-reference-mag">×60</span>
+                <span class="scope-reference-copy"><strong>금속 배선</strong><small>1 μm · 세균 한 마리</small></span>
               </div>
               <div class="scope-reference-item" data-reference-index="3">
-                <span class="scope-reference-mag">×3.5K</span>
-                <span class="scope-reference-copy"><strong>TSV · 범프</strong><small>10 μm · 적혈구 한 개</small></span>
+                <span class="scope-reference-mag">×600</span>
+                <span class="scope-reference-copy"><strong>미세 배선</strong><small>100 nm · 작은 바이러스</small></span>
               </div>
               <div class="scope-reference-item" data-reference-index="4">
-                <span class="scope-reference-mag">×1.75M</span>
-                <span class="scope-reference-copy"><strong>DRAM 셀</strong><small>20 nm · DNA 폭의 10배</small></span>
+                <span class="scope-reference-mag">×12K</span>
+                <span class="scope-reference-copy"><strong>5 nm 공정</strong><small>5 nm · DNA 폭의 2.5배</small></span>
               </div>
             </div>
             <div class="scope-stage-buttons" id="scope-stage-buttons" aria-label="확대 단계 선택">
-              <button type="button" data-scale-stage="0" class="active" aria-label="HBM 패키지 단계">1</button>
-              <button type="button" data-scale-stage="1" aria-label="적층 DRAM 단계">2</button>
-              <button type="button" data-scale-stage="2" aria-label="DRAM 다이 단계">3</button>
-              <button type="button" data-scale-stage="3" aria-label="TSV 단계">4</button>
-              <button type="button" data-scale-stage="4" aria-label="나노미터 DRAM 셀 단계">5</button>
+              <button type="button" data-scale-stage="0" class="active" aria-label="반도체 샘플 단계">1</button>
+              <button type="button" data-scale-stage="1" aria-label="다이 패턴 단계">2</button>
+              <button type="button" data-scale-stage="2" aria-label="금속 배선 단계">3</button>
+              <button type="button" data-scale-stage="3" aria-label="미세 배선 단계">4</button>
+              <button type="button" data-scale-stage="4" aria-label="5 나노미터 공정 단계">5</button>
             </div>
           </div>
         </div>
-        <!-- Extra scroll height for zoom interaction -->
-        <div class="scale-scroll-space"></div>
       </div>
     </section>
 
