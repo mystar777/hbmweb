@@ -46,7 +46,9 @@ window.HBM = window.HBM || {};
             }
           });
         },
-        { threshold: 0.3 }
+        // Long-form exhibits can be several viewports tall; a low threshold
+        // keeps the active scene and its animation in sync while scrolling.
+        { threshold: 0.12 }
       );
 
       this.scenes.forEach((scene) => {
@@ -94,6 +96,7 @@ window.HBM = window.HBM || {};
 
       // Init data flow canvases
       this.initDataFlowCanvases();
+      this.initMuseumInteractions();
     }
 
     // ---- Scene Enter/Exit Logic ----
@@ -101,6 +104,11 @@ window.HBM = window.HBM || {};
     onSceneEnter(index, element) {
       if (this.activeSceneIndex === index) return;
       this.activeSceneIndex = index;
+
+      if (this.scaleDive && index !== 3) this.scaleDive.stop();
+      this.scenes.forEach((scene, sceneIndex) => {
+        scene.classList.toggle('is-active-scene', sceneIndex === index);
+      });
 
       // Update progress dots
       document.querySelectorAll('.progress-dots .dot').forEach((dot, i) => {
@@ -123,6 +131,7 @@ window.HBM = window.HBM || {};
           break;
         case 3: // Scale dive — hide particles
           this.particleNetwork.setOpacity(0);
+          if (this.scaleDive) this.scaleDive.start();
           break;
         case 4: // Data flow — dataflow mode
           this.particleNetwork.setMode('dataflow');
@@ -165,35 +174,84 @@ window.HBM = window.HBM || {};
 
         if (this.scaleDive && this.activeSceneIndex === 3) {
           this.scaleDive.setProgress(scaleProgress);
-          this.scaleDive.render();
-
-          // Update info panel
-          this.updateScaleInfo(scaleProgress);
         }
       }
     }
 
-    updateScaleInfo(progress) {
-      const levels = [
-        { name: 'HBM 패키지', mag: '×1', size: '31mm × 31mm', comp: '손톱 크기와 비슷합니다' },
-        { name: 'DRAM 다이', mag: '×10', size: '~10mm × 8mm', comp: '쌀알 한 톨 위에 올라갑니다' },
-        { name: 'TSV 관통 전극', mag: '×1,000', size: '직경 5~10μm', comp: '머리카락 굵기의 1/10' },
-        { name: '마이크로 범프', mag: '×10,000', size: '직경 ~25μm', comp: '적혈구 3개를 나란히 놓은 크기' },
-        { name: '데이터가 흐르는 곳', mag: '×100,000', size: '수 나노미터', comp: 'DNA 이중나선 굵기와 비슷합니다' },
-      ];
+    // ---- Hands-on museum interactions ----
 
-      const idx = Math.min(Math.floor(progress * levels.length), levels.length - 1);
-      const level = levels[idx];
+    initMuseumInteractions() {
+      this.initStackLab();
+      this.initBandwidthLab();
+    }
 
-      const nameEl = document.getElementById('scale-level-name');
-      const magEl = document.getElementById('magnification');
-      const sizeEl = document.getElementById('current-size');
-      const compEl = document.getElementById('comparison-text');
+    initStackLab() {
+      const slider = document.getElementById('stack-explode');
+      const stack = document.getElementById('hbm-stack');
+      const output = document.getElementById('stack-gap-value');
+      const detail = document.getElementById('layer-detail');
+      if (!slider || !stack) return;
 
-      if (nameEl) nameEl.textContent = level.name;
-      if (magEl) magEl.textContent = level.mag;
-      if (sizeEl) sizeEl.textContent = level.size;
-      if (compEl) compEl.textContent = level.comp;
+      const updateGap = () => {
+        const value = Number(slider.value);
+        stack.style.setProperty('--stack-gap', `${Math.round(value * 0.18)}px`);
+        stack.classList.toggle('is-exploded', value > 35);
+        if (output) output.textContent = value < 15 ? '조립 상태' : value < 70 ? '층 사이 관찰' : '완전 분해';
+      };
+
+      slider.addEventListener('input', updateGap);
+      updateGap();
+
+      const details = {
+        top: ['HEAT SPREADER', '히트스프레더', '여러 층에서 생긴 열을 패키지 바깥으로 빠르게 퍼뜨립니다.'],
+        base: ['BASE DIE', '베이스 로직 다이', '메모리 채널과 입출력을 제어해 GPU와 DRAM 스택 사이의 교통을 정리합니다.'],
+        dram: ['DRAM DIE', 'DRAM 다이', '수십억 개의 셀이 0과 1을 저장합니다. 여러 장을 쌓아 용량을 높입니다.'],
+      };
+
+      stack.querySelectorAll('.stack-layer').forEach((layer) => {
+        layer.setAttribute('tabindex', '0');
+        layer.setAttribute('role', 'button');
+        const showDetail = () => {
+          const type = layer.dataset.layer === 'top' ? 'top' : layer.dataset.layer === 'base' ? 'base' : 'dram';
+          const info = details[type];
+          stack.querySelectorAll('.stack-layer').forEach((item) => item.classList.remove('selected'));
+          layer.classList.add('selected');
+          if (detail) detail.innerHTML = `<span class="detail-kicker">${info[0]}</span><strong>${info[1]}</strong><p>${info[2]}</p>`;
+        };
+        layer.addEventListener('click', showDetail);
+        layer.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            showDetail();
+          }
+        });
+      });
+    }
+
+    initBandwidthLab() {
+      const slider = document.getElementById('payload-slider');
+      const value = document.getElementById('payload-value');
+      const ddrTime = document.getElementById('ddr-time');
+      const hbmTime = document.getElementById('hbm-time');
+      const ddrBar = document.getElementById('ddr-race-bar');
+      const hbmBar = document.getElementById('hbm-race-bar');
+      if (!slider) return;
+
+      const formatSeconds = (seconds) => seconds >= 10 ? `${seconds.toFixed(1)}초` : `${seconds.toFixed(2)}초`;
+      const update = () => {
+        const payloadTb = Number(slider.value);
+        const payloadGb = payloadTb * 1024;
+        const ddrSeconds = payloadGb / 51.2;
+        const hbmSeconds = payloadGb / 1180;
+        if (value) value.textContent = `${payloadTb} TB`;
+        if (ddrTime) ddrTime.textContent = formatSeconds(ddrSeconds);
+        if (hbmTime) hbmTime.textContent = formatSeconds(hbmSeconds);
+        if (ddrBar) ddrBar.style.transform = `scaleX(${(51.2 / 1180).toFixed(3)})`;
+        if (hbmBar) hbmBar.style.transform = 'scaleX(1)';
+      };
+
+      slider.addEventListener('input', update);
+      update();
     }
 
     // ---- Data Flow Comparison Animation ----

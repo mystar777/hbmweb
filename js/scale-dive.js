@@ -1,649 +1,474 @@
+/**
+ * HBM Scale Dive
+ * A scroll- and drag-driven circular microscope that travels from the package
+ * scale to a nanometre-class DRAM cell.
+ */
 window.HBM = window.HBM || {};
 
-/**
- * Scale Dive module for HBM storytelling website.
- * Creates a microscope-like zoom-in visualization from macro to nano scale.
- */
 window.HBM.ScaleDive = class {
-    /**
-     * @param {HTMLElement} container - DOM element for this scene
-     * @param {HTMLCanvasElement} canvas - Shared Canvas element
-     * @param {Object} options - Configuration options
-     */
-    constructor(container, canvas, options = {}) {
-        this.container = container;
-        this.canvas = canvas;
-        this.ctx = canvas.getContext('2d');
-        
-        this.options = Object.assign({
-            colors: {
-                primary: '#00d4ff',
-                secondary: '#7b2ff7',
-                accent: '#ff6b35',
-                bg: '#0a0a0f',
-                text: '#e0e0e0'
-            }
-        }, options);
+  constructor(container, canvas, options = {}) {
+    this.container = container;
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.options = Object.assign({
+      colors: {
+        primary: '#6be7ff',
+        secondary: '#8b5cf6',
+        accent: '#ff9a62',
+        background: '#05070b',
+        text: '#f5fbff',
+      },
+    }, options);
 
-        this.width = canvas.width;
-        this.height = canvas.height;
-        this.centerX = this.width / 2;
-        this.centerY = this.height / 2;
-        
-        // Viewport radius (microscope view)
-        this.viewportRadius = Math.min(this.width, this.height) * 0.4;
-        
-        this.progress = 0;
-        this.currentLevel = 0;
-        this.levelProgress = 0;
-        
-        this.time = 0;
-        
-        this.levels = [
-            {
-                name: 'HBM 패키지',
-                size: '31mm × 31mm',
-                comparison: '손톱 크기와 비슷합니다',
-                magBase: 1,
-                magTarget: 10,
-                drawIcon: this.drawFingernailIcon.bind(this),
-                drawVisual: this.drawLevel0.bind(this)
-            },
-            {
-                name: 'DRAM 다이',
-                size: '~10mm × 8mm',
-                comparison: '쌀알 한 톨 위에 올라갑니다',
-                magBase: 10,
-                magTarget: 100,
-                drawIcon: this.drawRiceIcon.bind(this),
-                drawVisual: this.drawLevel1.bind(this)
-            },
-            {
-                name: 'TSV 관통 전극',
-                size: '직경 5~10μm',
-                comparison: '머리카락 굵기의 1/10',
-                magBase: 100,
-                magTarget: 1000,
-                drawIcon: this.drawHairIcon.bind(this),
-                drawVisual: this.drawLevel2.bind(this)
-            },
-            {
-                name: '마이크로 범프',
-                size: '직경 ~25μm',
-                comparison: '적혈구 3개를 나란히 놓은 크기',
-                magBase: 1000,
-                magTarget: 10000,
-                drawIcon: this.drawRBCIcon.bind(this),
-                drawVisual: this.drawLevel3.bind(this)
-            },
-            {
-                name: '데이터가 흐르는 곳',
-                size: '수 나노미터의 회로',
-                comparison: 'DNA 이중나선 굵기와 비슷합니다',
-                magBase: 10000,
-                magTarget: 100000,
-                drawIcon: this.drawDNAIcon.bind(this),
-                drawVisual: this.drawLevel4.bind(this)
-            }
-        ];
+    this.stages = [
+      {
+        name: 'HBM 패키지',
+        target: '패키지 전체',
+        spanNm: 35_000_000,
+        magnification: 1,
+        scaleBar: '10 mm',
+        description: 'GPU 옆에 놓이는 3차원 메모리 묶음입니다.',
+        image: 'assets/scale-dive/01-hbm-package.jpg',
+      },
+      {
+        name: '적층 DRAM',
+        target: 'DRAM 다이 스택',
+        spanNm: 1_000_000,
+        magnification: 35,
+        scaleBar: '250 μm',
+        description: '얇은 DRAM 여러 장을 쌓아 같은 면적에 더 많은 데이터를 담습니다.',
+        image: 'assets/scale-dive/02-hbm-stack.jpg',
+      },
+      {
+        name: 'DRAM 다이',
+        target: '메모리 뱅크',
+        spanNm: 100_000,
+        magnification: 350,
+        scaleBar: '25 μm',
+        description: '수많은 메모리 셀이 바둑판처럼 반복되는 저장 공간입니다.',
+        image: 'assets/scale-dive/03-dram-die.jpg',
+      },
+      {
+        name: 'TSV · 마이크로범프',
+        target: '수직 데이터 통로',
+        spanNm: 10_000,
+        magnification: 3_500,
+        scaleBar: '2 μm',
+        description: '수 μm급 구리 통로가 층과 층 사이를 엘리베이터처럼 연결합니다.',
+        image: 'assets/scale-dive/04-tsv.jpg',
+      },
+      {
+        name: 'DRAM 셀 · 나노 배선',
+        target: '셀과 금속 배선',
+        spanNm: 20,
+        magnification: 1_750_000,
+        scaleBar: '5 nm',
+        description: '10 nm급 공정 세대의 셀과 배선입니다. 공정 이름은 한 부품의 실제 치수와 같지 않습니다.',
+        image: 'assets/scale-dive/05-dram-cell.jpg',
+      },
+    ];
+
+    this.images = [];
+    this.progress = 0;
+    this.targetProgress = 0;
+    this.velocity = 0;
+    this.time = 0;
+    this.lastFrame = performance.now();
+    this.running = false;
+    this.rafId = null;
+    this.currentStage = -1;
+    this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    this.width = canvas.width;
+    this.height = canvas.height;
+    this.centerX = this.width / 2;
+    this.centerY = this.height / 2;
+    this.viewportRadius = Math.min(this.width, this.height) * 0.39;
+
+    this.cacheUI();
+    this.preloadImages();
+    this.bindInteractions();
+    this.resize(this.width, this.height);
+  }
+
+  cacheUI() {
+    this.ui = {
+      magnification: document.getElementById('magnification'),
+      size: document.getElementById('current-size'),
+      target: document.getElementById('scope-target'),
+      description: document.getElementById('comparison-text'),
+      levelName: document.getElementById('scale-level-name'),
+      meter: document.getElementById('scope-meter-fill'),
+      hint: document.getElementById('scale-gesture-hint'),
+      buttons: Array.from(document.querySelectorAll('[data-scale-stage]')),
+    };
+  }
+
+  preloadImages() {
+    this.stages.forEach((stage, index) => {
+      const image = new Image();
+      image.decoding = 'async';
+      image.onload = () => this.render();
+      image.src = stage.image;
+      this.images[index] = image;
+    });
+  }
+
+  bindInteractions() {
+    this.dragging = false;
+    this.dragStartY = 0;
+    this.dragStartProgress = 0;
+
+    this.canvas.addEventListener('pointerdown', (event) => {
+      this.dragging = true;
+      this.dragStartY = event.clientY;
+      this.dragStartProgress = this.targetProgress;
+      this.canvas.setPointerCapture(event.pointerId);
+      this.container.classList.add('is-dragging');
+    });
+
+    this.canvas.addEventListener('pointermove', (event) => {
+      if (!this.dragging) return;
+      const distance = this.dragStartY - event.clientY;
+      const nextProgress = this.clamp(this.dragStartProgress + distance / Math.max(window.innerHeight * 0.72, 420));
+      this.scrollToProgress(nextProgress);
+    });
+
+    const endDrag = (event) => {
+      if (!this.dragging) return;
+      this.dragging = false;
+      this.container.classList.remove('is-dragging');
+      if (event.pointerId !== undefined && this.canvas.hasPointerCapture(event.pointerId)) {
+        this.canvas.releasePointerCapture(event.pointerId);
+      }
+    };
+
+    this.canvas.addEventListener('pointerup', endDrag);
+    this.canvas.addEventListener('pointercancel', endDrag);
+
+    this.ui.buttons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const stageIndex = Number(button.dataset.scaleStage);
+        this.scrollToProgress(stageIndex / (this.stages.length - 1));
+      });
+    });
+  }
+
+  scrollToProgress(progress) {
+    const sectionTop = this.container.offsetTop;
+    const scrollRange = Math.max(this.container.offsetHeight - window.innerHeight, 1);
+    window.scrollTo({ top: sectionTop + this.clamp(progress) * scrollRange, behavior: 'auto' });
+  }
+
+  clamp(value) {
+    return Math.max(0, Math.min(1, value));
+  }
+
+  setProgress(progress) {
+    this.targetProgress = this.clamp(progress);
+    if (this.reducedMotion) {
+      this.progress = this.targetProgress;
+      this.render();
+    }
+  }
+
+  start() {
+    if (this.running) return;
+    this.running = true;
+    this.lastFrame = performance.now();
+    const tick = (now) => {
+      if (!this.running) return;
+      const delta = Math.min(now - this.lastFrame, 34);
+      this.lastFrame = now;
+      const previous = this.progress;
+      const ease = 1 - Math.exp(-delta / 110);
+      this.progress += (this.targetProgress - this.progress) * ease;
+      this.velocity += ((this.progress - previous) - this.velocity) * 0.18;
+      this.time += delta * 0.001;
+      this.render();
+      this.rafId = requestAnimationFrame(tick);
+    };
+    this.rafId = requestAnimationFrame(tick);
+  }
+
+  stop() {
+    this.running = false;
+    if (this.rafId) cancelAnimationFrame(this.rafId);
+    this.rafId = null;
+  }
+
+  resize(width, height) {
+    this.width = width;
+    this.height = height;
+    const wide = width / height > 1.35;
+    this.centerX = width * (wide ? 0.39 : 0.5);
+    this.centerY = height * 0.53;
+    this.viewportRadius = Math.min(height * 0.4, width * (wide ? 0.3 : 0.43));
+    this.render();
+  }
+
+  stageState() {
+    const scaled = this.clamp(this.progress) * (this.stages.length - 1);
+    const index = Math.min(Math.floor(scaled), this.stages.length - 1);
+    return {
+      index,
+      nextIndex: Math.min(index + 1, this.stages.length - 1),
+      local: index === this.stages.length - 1 ? 1 : scaled - index,
+    };
+  }
+
+  smoothstep(min, max, value) {
+    const x = this.clamp((value - min) / (max - min));
+    return x * x * (3 - 2 * x);
+  }
+
+  render() {
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    const dpr = Math.max(window.devicePixelRatio || 1, 1);
+    const state = this.stageState();
+    const blend = state.nextIndex === state.index ? 0 : this.smoothstep(0.52, 0.98, state.local);
+
+    ctx.save();
+    ctx.clearRect(0, 0, this.width, this.height);
+    this.drawBackground(ctx);
+    this.drawLensShadow(ctx);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(this.centerX, this.centerY, this.viewportRadius, 0, Math.PI * 2);
+    ctx.clip();
+
+    const motionBlur = Math.min(Math.abs(this.velocity) * 800, 2.2) * dpr;
+    this.drawStageImage(ctx, state.index, state.local, 1 - blend, motionBlur, false);
+    if (blend > 0) this.drawStageImage(ctx, state.nextIndex, blend, blend, motionBlur, true);
+    this.drawOpticalTexture(ctx, state.index);
+    ctx.restore();
+
+    this.drawLens(ctx);
+    this.drawScaleBar(ctx, state, dpr);
+    ctx.restore();
+    this.updateUI(state);
+  }
+
+  drawBackground(ctx) {
+    const gradient = ctx.createRadialGradient(
+      this.centerX,
+      this.centerY,
+      this.viewportRadius * 0.2,
+      this.centerX,
+      this.centerY,
+      Math.max(this.width, this.height) * 0.75
+    );
+    gradient.addColorStop(0, 'rgba(15, 30, 42, 0.52)');
+    gradient.addColorStop(0.48, 'rgba(5, 8, 13, 0.96)');
+    gradient.addColorStop(1, '#030406');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, this.width, this.height);
+  }
+
+  drawLensShadow(ctx) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(69, 220, 255, 0.28)';
+    ctx.shadowBlur = this.viewportRadius * 0.12;
+    ctx.fillStyle = '#020304';
+    ctx.beginPath();
+    ctx.arc(this.centerX, this.centerY, this.viewportRadius * 1.018, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  drawStageImage(ctx, index, local, opacity, blur, incoming) {
+    const image = this.images[index];
+    if (!image || !image.complete || !image.naturalWidth) {
+      this.drawFallback(ctx, index, opacity);
+      return;
     }
 
-    /**
-     * Update the progress of the scene (0 to 1)
-     * @param {number} progress 
-     */
-    setProgress(progress) {
-        this.progress = Math.max(0, Math.min(1, progress));
-        
-        const totalLevels = this.levels.length;
-        const rawLevel = this.progress * totalLevels;
-        
-        this.currentLevel = Math.min(Math.floor(rawLevel), totalLevels - 1);
-        
-        // If we're at exactly 1.0 progress, set to the end of the last level
-        if (this.progress === 1) {
-            this.currentLevel = totalLevels - 1;
-            this.levelProgress = 1;
-        } else {
-            this.levelProgress = rawLevel - this.currentLevel;
-        }
+    const baseSize = this.viewportRadius * 2.06;
+    const zoom = incoming ? 0.78 + local * 0.28 : 1 + local * 0.66;
+    const drift = Math.sin(this.time * 0.7 + index) * this.viewportRadius * 0.008;
+
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.filter = `saturate(${1.03 + index * 0.025}) contrast(1.05) blur(${blur}px)`;
+    ctx.translate(this.centerX + drift, this.centerY - drift * 0.45);
+    ctx.rotate(Math.sin(this.time * 0.28 + index) * 0.0025);
+    ctx.scale(zoom, zoom);
+    ctx.drawImage(image, -baseSize / 2, -baseSize / 2, baseSize, baseSize);
+    ctx.restore();
+  }
+
+  drawFallback(ctx, index, opacity) {
+    const gradient = ctx.createRadialGradient(
+      this.centerX,
+      this.centerY,
+      0,
+      this.centerX,
+      this.centerY,
+      this.viewportRadius
+    );
+    gradient.addColorStop(0, index % 2 ? '#18364a' : '#3c2418');
+    gradient.addColorStop(1, '#05070a');
+    ctx.globalAlpha = opacity;
+    ctx.fillStyle = gradient;
+    ctx.fillRect(
+      this.centerX - this.viewportRadius,
+      this.centerY - this.viewportRadius,
+      this.viewportRadius * 2,
+      this.viewportRadius * 2
+    );
+    ctx.globalAlpha = 1;
+  }
+
+  drawOpticalTexture(ctx, stageIndex) {
+    const radius = this.viewportRadius;
+    const vignette = ctx.createRadialGradient(
+      this.centerX,
+      this.centerY,
+      radius * 0.45,
+      this.centerX,
+      this.centerY,
+      radius
+    );
+    vignette.addColorStop(0, 'rgba(0,0,0,0)');
+    vignette.addColorStop(0.72, 'rgba(0,6,10,0.08)');
+    vignette.addColorStop(1, 'rgba(0,0,0,0.75)');
+    ctx.fillStyle = vignette;
+    ctx.fillRect(this.centerX - radius, this.centerY - radius, radius * 2, radius * 2);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    const scanY = this.centerY - radius + ((this.time * 52) % (radius * 2));
+    const scan = ctx.createLinearGradient(0, scanY - 20, 0, scanY + 20);
+    scan.addColorStop(0, 'rgba(58,220,255,0)');
+    scan.addColorStop(0.5, `rgba(58,220,255,${0.045 + stageIndex * 0.012})`);
+    scan.addColorStop(1, 'rgba(58,220,255,0)');
+    ctx.fillStyle = scan;
+    ctx.fillRect(this.centerX - radius, scanY - 20, radius * 2, 40);
+    ctx.restore();
+  }
+
+  drawLens(ctx) {
+    const radius = this.viewportRadius;
+    ctx.save();
+    ctx.translate(this.centerX, this.centerY);
+
+    for (let ring = 0; ring < 3; ring += 1) {
+      ctx.beginPath();
+      ctx.arc(0, 0, radius + ring * Math.max(2, radius * 0.012), 0, Math.PI * 2);
+      ctx.strokeStyle = ring === 0 ? 'rgba(175,245,255,0.9)' : `rgba(72,203,232,${0.28 - ring * 0.08})`;
+      ctx.lineWidth = ring === 0 ? Math.max(2, radius * 0.006) : Math.max(1, radius * 0.004);
+      ctx.stroke();
     }
 
-    /**
-     * Handle canvas resize
-     * @param {number} width 
-     * @param {number} height 
-     */
-    resize(width, height) {
-        this.width = width;
-        this.height = height;
-        this.centerX = this.width / 2;
-        this.centerY = this.height / 2;
-        this.viewportRadius = Math.min(this.width, this.height) * 0.4;
+    ctx.rotate(this.time * 0.025);
+    for (let i = 0; i < 72; i += 1) {
+      const major = i % 9 === 0;
+      const angle = (i / 72) * Math.PI * 2;
+      const outer = radius * 1.055;
+      const inner = outer - radius * (major ? 0.045 : 0.022);
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+      ctx.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
+      ctx.strokeStyle = major ? 'rgba(190,247,255,0.72)' : 'rgba(95,208,232,0.32)';
+      ctx.lineWidth = major ? 2 : 1;
+      ctx.stroke();
+    }
+    ctx.rotate(-this.time * 0.025);
+
+    ctx.strokeStyle = 'rgba(189, 244, 255, 0.48)';
+    ctx.lineWidth = Math.max(1, radius * 0.003);
+    ctx.setLineDash([radius * 0.018, radius * 0.026]);
+    ctx.beginPath();
+    ctx.moveTo(-radius * 0.22, 0);
+    ctx.lineTo(radius * 0.22, 0);
+    ctx.moveTo(0, -radius * 0.22);
+    ctx.lineTo(0, radius * 0.22);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    const pulseRadius = radius * (0.15 + ((this.time * 0.18) % 1) * 0.75);
+    ctx.beginPath();
+    ctx.arc(0, 0, pulseRadius, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(74, 221, 255, ${0.13 * (1 - pulseRadius / radius)})`;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  drawScaleBar(ctx, state, dpr) {
+    const stage = this.stages[state.index];
+    const barWidth = this.viewportRadius * 0.34;
+    const x = this.centerX + this.viewportRadius * 0.48 - barWidth;
+    const y = this.centerY + this.viewportRadius * 0.72;
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(245, 252, 255, 0.86)';
+    ctx.fillStyle = 'rgba(245, 252, 255, 0.9)';
+    ctx.lineWidth = Math.max(1.5 * dpr, 2);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + barWidth, y);
+    ctx.moveTo(x, y - 6 * dpr);
+    ctx.lineTo(x, y + 6 * dpr);
+    ctx.moveTo(x + barWidth, y - 6 * dpr);
+    ctx.lineTo(x + barWidth, y + 6 * dpr);
+    ctx.stroke();
+    ctx.font = `600 ${Math.max(11 * dpr, this.viewportRadius * 0.042)}px "Noto Sans KR", sans-serif`;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(stage.scaleBar, x + barWidth, y - 9 * dpr);
+    ctx.restore();
+  }
+
+  interpolateLog(start, end, value) {
+    return Math.exp(Math.log(start) + (Math.log(end) - Math.log(start)) * value);
+  }
+
+  formatMagnification(value) {
+    if (value >= 1_000_000) return `×${(value / 1_000_000).toFixed(value < 2_000_000 ? 2 : 1)}M`;
+    if (value >= 1_000) return `×${(value / 1_000).toFixed(value < 10_000 ? 1 : 0)}K`;
+    return `×${Math.max(1, Math.round(value)).toLocaleString('ko-KR')}`;
+  }
+
+  formatSpan(nanometres) {
+    if (nanometres >= 1_000_000) return `${(nanometres / 1_000_000).toFixed(nanometres < 10_000_000 ? 1 : 0)} mm`;
+    if (nanometres >= 1_000) return `${(nanometres / 1_000).toFixed(nanometres < 10_000 ? 1 : 0)} μm`;
+    return `${Math.max(1, Math.round(nanometres))} nm`;
+  }
+
+  updateUI(state) {
+    const stage = this.stages[state.index];
+    const next = this.stages[state.nextIndex];
+    const mag = this.interpolateLog(stage.magnification, next.magnification, state.local);
+    const span = this.interpolateLog(stage.spanNm, next.spanNm, state.local);
+
+    if (this.ui.magnification) this.ui.magnification.textContent = this.formatMagnification(mag);
+    if (this.ui.size) this.ui.size.textContent = this.formatSpan(span);
+    if (this.ui.target) this.ui.target.textContent = stage.target;
+    if (this.ui.description) this.ui.description.textContent = stage.description;
+    if (this.ui.meter) this.ui.meter.style.height = `${Math.max(2, this.progress * 100)}%`;
+
+    if (this.ui.levelName) {
+      this.ui.levelName.innerHTML = `<span class="level-index">${String(state.index + 1).padStart(2, '0')} / 05</span><strong>${stage.name}</strong>`;
     }
 
-    /**
-     * Clean up resources
-     */
-    destroy() {
-        // Clear references
-        this.ctx = null;
-        this.canvas = null;
-        this.container = null;
+    if (this.currentStage !== state.index) {
+      this.currentStage = state.index;
+      this.container.dataset.scaleStage = String(state.index);
+      this.ui.buttons.forEach((button, index) => {
+        button.classList.toggle('active', index === state.index);
+        button.setAttribute('aria-current', index === state.index ? 'step' : 'false');
+      });
     }
 
-    /**
-     * Render the scene
-     */
-    render() {
-        if (!this.ctx) return;
-        
-        this.time += 0.01;
-        const ctx = this.ctx;
-        
-        ctx.save();
-        
-        // Draw background
-        ctx.fillStyle = this.options.colors.bg;
-        ctx.fillRect(0, 0, this.width, this.height);
-        
-        // Draw tunnel effect around viewport
-        this.drawTunnel(ctx);
-        
-        // Create clipping region for viewport
-        ctx.beginPath();
-        ctx.arc(this.centerX, this.centerY, this.viewportRadius, 0, Math.PI * 2);
-        ctx.clip();
-        
-        // Draw inner background
-        ctx.fillStyle = '#050508';
-        ctx.fillRect(this.centerX - this.viewportRadius, this.centerY - this.viewportRadius, this.viewportRadius * 2, this.viewportRadius * 2);
-        
-        // Determine levels to blend
-        const levelData = this.levels[this.currentLevel];
-        const nextLevelData = this.levels[Math.min(this.currentLevel + 1, this.levels.length - 1)];
-        
-        // Crossfade between levels in the latter half of level progress
-        let alpha = 1;
-        let nextAlpha = 0;
-        
-        if (this.levelProgress > 0.8 && this.currentLevel < this.levels.length - 1) {
-            const blend = (this.levelProgress - 0.8) / 0.2;
-            alpha = 1 - blend;
-            nextAlpha = blend;
-        }
-        
-        // Draw current visual
-        if (alpha > 0) {
-            ctx.globalAlpha = alpha;
-            ctx.save();
-            ctx.translate(this.centerX, this.centerY);
-            // Add slight continuous zoom effect within the level
-            const localZoom = 1 + this.levelProgress * 0.5;
-            ctx.scale(localZoom, localZoom);
-            levelData.drawVisual(ctx);
-            ctx.restore();
-        }
-        
-        // Draw next visual blending in
-        if (nextAlpha > 0) {
-            ctx.globalAlpha = nextAlpha;
-            ctx.save();
-            ctx.translate(this.centerX, this.centerY);
-            // It starts zoomed out and zooms in
-            const nextLocalZoom = 0.5 + this.levelProgress * 0.5;
-            ctx.scale(nextLocalZoom, nextLocalZoom);
-            nextLevelData.drawVisual(ctx);
-            ctx.restore();
-        }
-        
-        ctx.globalAlpha = 1;
-        
-        // Draw viewport border and glow
-        this.drawViewportBorder(ctx);
-        
-        // Draw UI Elements (Scale Bar, Comparison)
-        this.drawUI(ctx, levelData, alpha, nextLevelData, nextAlpha);
-        
-        ctx.restore();
-    }
-    
-    drawTunnel(ctx) {
-        ctx.save();
-        ctx.translate(this.centerX, this.centerY);
-        
-        const rings = 8;
-        for (let i = 0; i < rings; i++) {
-            // Calculate base ring position
-            const ringOffset = (i / rings + this.progress * 2) % 1;
-            // Map 0-1 to radius from viewport up to edge of screen
-            const maxRadius = Math.max(this.width, this.height);
-            const r = this.viewportRadius + ringOffset * (maxRadius - this.viewportRadius);
-            
-            // Draw ring
-            ctx.beginPath();
-            ctx.arc(0, 0, r, 0, Math.PI * 2);
-            ctx.strokeStyle = `rgba(0, 212, 255, ${0.1 * (1 - ringOffset)})`;
-            ctx.lineWidth = 2 + ringOffset * 5;
-            ctx.stroke();
-            
-            // Draw rotating dashes
-            ctx.save();
-            ctx.rotate(this.time * 0.5 * (i % 2 === 0 ? 1 : -1));
-            ctx.beginPath();
-            ctx.arc(0, 0, r, 0, Math.PI * 2);
-            ctx.setLineDash([20 * ringOffset, 40 * ringOffset]);
-            ctx.strokeStyle = `rgba(123, 47, 247, ${0.2 * (1 - ringOffset)})`;
-            ctx.stroke();
-            ctx.restore();
-        }
-        ctx.restore();
-    }
-    
-    drawViewportBorder(ctx) {
-        // Inner shadow / glow
-        const grad = ctx.createRadialGradient(
-            this.centerX, this.centerY, this.viewportRadius * 0.8,
-            this.centerX, this.centerY, this.viewportRadius
-        );
-        grad.addColorStop(0, 'rgba(0,0,0,0)');
-        grad.addColorStop(1, 'rgba(0, 212, 255, 0.3)');
-        
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(this.centerX, this.centerY, this.viewportRadius, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Solid border
-        ctx.beginPath();
-        ctx.arc(this.centerX, this.centerY, this.viewportRadius, 0, Math.PI * 2);
-        ctx.strokeStyle = this.options.colors.primary;
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        
-        // Outer glow
-        ctx.shadowColor = this.options.colors.primary;
-        ctx.shadowBlur = 15;
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-        
-        // Crosshairs
-        ctx.strokeStyle = 'rgba(0, 212, 255, 0.4)';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([5, 10]);
-        
-        ctx.beginPath();
-        ctx.moveTo(this.centerX, this.centerY - this.viewportRadius);
-        ctx.lineTo(this.centerX, this.centerY - this.viewportRadius + 30);
-        ctx.moveTo(this.centerX, this.centerY + this.viewportRadius - 30);
-        ctx.lineTo(this.centerX, this.centerY + this.viewportRadius);
-        ctx.moveTo(this.centerX - this.viewportRadius, this.centerY);
-        ctx.lineTo(this.centerX - this.viewportRadius + 30, this.centerY);
-        ctx.moveTo(this.centerX + this.viewportRadius - 30, this.centerY);
-        ctx.lineTo(this.centerX + this.viewportRadius, this.centerY);
-        ctx.stroke();
-        ctx.setLineDash([]);
-    }
+    if (this.ui.hint) this.ui.hint.classList.toggle('is-hidden', this.progress > 0.05);
+  }
 
-    drawUI(ctx, currentLvl, alpha, nextLvl, nextAlpha) {
-        // --- Scale Bar (Bottom Right) ---
-        const scaleBaseMag = currentLvl.magBase;
-        const scaleTargetMag = currentLvl.magTarget;
-        
-        // Interpolate magnification
-        let currentMag = scaleBaseMag + (scaleTargetMag - scaleBaseMag) * this.levelProgress;
-        
-        const scaleX = this.centerX + this.viewportRadius * 0.4;
-        const scaleY = this.centerY + this.viewportRadius * 0.7;
-        
-        ctx.fillStyle = this.options.colors.text;
-        ctx.font = 'bold 24px sans-serif';
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'bottom';
-        ctx.fillText(`×${Math.floor(currentMag).toLocaleString()}`, scaleX + 80, scaleY);
-        
-        // Interpolate size text (fade out current, fade in next if transitioning)
-        ctx.font = '14px sans-serif';
-        ctx.globalAlpha = alpha;
-        ctx.fillText(currentLvl.size, scaleX + 80, scaleY + 20);
-        
-        if (nextAlpha > 0) {
-            ctx.globalAlpha = nextAlpha;
-            ctx.fillText(nextLvl.size, scaleX + 80, scaleY + 20);
-        }
-        ctx.globalAlpha = 1;
-        
-        // Draw scale line
-        ctx.strokeStyle = this.options.colors.text;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(scaleX - 40, scaleY + 25);
-        ctx.lineTo(scaleX + 80, scaleY + 25);
-        ctx.moveTo(scaleX - 40, scaleY + 20);
-        ctx.lineTo(scaleX - 40, scaleY + 30);
-        ctx.moveTo(scaleX + 80, scaleY + 20);
-        ctx.lineTo(scaleX + 80, scaleY + 30);
-        ctx.stroke();
-        
-        // --- Comparison Panel (Left) ---
-        const panelX = this.centerX - this.viewportRadius * 0.8;
-        const panelY = this.centerY;
-        
-        const drawPanelInfo = (lvl, opacity) => {
-            if (opacity <= 0) return;
-            ctx.globalAlpha = opacity;
-            
-            // Name
-            ctx.fillStyle = this.options.colors.primary;
-            ctx.font = 'bold 20px sans-serif';
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(lvl.name, panelX, panelY - 40);
-            
-            // Comparison text
-            ctx.fillStyle = this.options.colors.text;
-            ctx.font = '14px sans-serif';
-            ctx.fillText(lvl.comparison, panelX, panelY - 15);
-            
-            // Icon
-            ctx.save();
-            ctx.translate(panelX + 20, panelY + 30);
-            lvl.drawIcon(ctx);
-            ctx.restore();
-            
-            ctx.globalAlpha = 1;
-        };
-        
-        drawPanelInfo(currentLvl, alpha);
-        drawPanelInfo(nextLvl, nextAlpha);
-    }
-    
-    // --- Level Visuals ---
-    
-    // Level 0: HBM Package
-    drawLevel0(ctx) {
-        const size = this.viewportRadius * 0.6;
-        
-        // Draw package outline
-        ctx.strokeStyle = this.options.colors.secondary;
-        ctx.lineWidth = 2;
-        ctx.strokeRect(-size, -size, size * 2, size * 2);
-        
-        // Draw inner die area
-        ctx.fillStyle = 'rgba(123, 47, 247, 0.1)';
-        ctx.fillRect(-size*0.8, -size*0.8, size*1.6, size*1.6);
-        ctx.strokeRect(-size*0.8, -size*0.8, size*1.6, size*1.6);
-        
-        // Draw pin array pattern
-        ctx.fillStyle = 'rgba(0, 212, 255, 0.3)';
-        const pinSpacing = size / 5;
-        for (let x = -size + pinSpacing/2; x < size; x += pinSpacing) {
-            for (let y = -size + pinSpacing/2; y < size; y += pinSpacing) {
-                // Skip center area for some structure
-                if (Math.abs(x) < size*0.4 && Math.abs(y) < size*0.4) continue;
-                ctx.beginPath();
-                ctx.arc(x, y, pinSpacing * 0.2, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-    }
-    
-    // Level 1: DRAM Die
-    drawLevel1(ctx) {
-        const width = this.viewportRadius * 0.8;
-        const height = this.viewportRadius * 0.6;
-        
-        // Die outline
-        ctx.strokeStyle = this.options.colors.primary;
-        ctx.lineWidth = 2;
-        ctx.fillStyle = 'rgba(0, 212, 255, 0.05)';
-        ctx.fillRect(-width, -height, width * 2, height * 2);
-        ctx.strokeRect(-width, -height, width * 2, height * 2);
-        
-        // Memory banks (grid)
-        ctx.strokeStyle = 'rgba(0, 212, 255, 0.3)';
-        ctx.lineWidth = 1;
-        
-        const cols = 8;
-        const rows = 4;
-        const cellW = (width * 2) / cols;
-        const cellH = (height * 2) / rows;
-        
-        for (let i = 0; i <= cols; i++) {
-            ctx.beginPath();
-            ctx.moveTo(-width + i * cellW, -height);
-            ctx.lineTo(-width + i * cellW, height);
-            ctx.stroke();
-        }
-        for (let i = 0; i <= rows; i++) {
-            ctx.beginPath();
-            ctx.moveTo(-width, -height + i * cellH);
-            ctx.lineTo(width, -height + i * cellH);
-            ctx.stroke();
-        }
-        
-        // Central logic area
-        ctx.fillStyle = 'rgba(123, 47, 247, 0.3)';
-        ctx.fillRect(-width * 0.1, -height, width * 0.2, height * 2);
-    }
-    
-    // Level 2: TSV
-    drawLevel2(ctx) {
-        // Cross section of silicon with vertical copper pillars
-        const numPillars = 5;
-        const spacing = this.viewportRadius * 0.4;
-        const pWidth = this.viewportRadius * 0.1;
-        const pHeight = this.viewportRadius * 1.5;
-        
-        // Draw silicon layers
-        ctx.fillStyle = 'rgba(50, 50, 70, 0.5)';
-        ctx.fillRect(-this.viewportRadius, -pHeight/2, this.viewportRadius*2, pHeight);
-        
-        // Draw horizontal layer lines
-        ctx.strokeStyle = 'rgba(100, 100, 150, 0.3)';
-        ctx.lineWidth = 1;
-        for (let i = -pHeight/2; i < pHeight/2; i += 40) {
-            ctx.beginPath();
-            ctx.moveTo(-this.viewportRadius, i);
-            ctx.lineTo(this.viewportRadius, i);
-            ctx.stroke();
-        }
-        
-        // Draw TSV Pillars
-        const startX = -((numPillars - 1) * spacing) / 2;
-        
-        for (let i = 0; i < numPillars; i++) {
-            const x = startX + i * spacing;
-            
-            // Copper gradient
-            const grad = ctx.createLinearGradient(x - pWidth/2, 0, x + pWidth/2, 0);
-            grad.addColorStop(0, '#8B4513');
-            grad.addColorStop(0.5, '#D2691E');
-            grad.addColorStop(1, '#8B4513');
-            
-            ctx.fillStyle = grad;
-            ctx.fillRect(x - pWidth/2, -pHeight/2, pWidth, pHeight);
-            
-            // Data flow animation along TSV
-            const flowOffset = (this.time * 50 + i * 100) % pHeight;
-            ctx.fillStyle = 'rgba(0, 212, 255, 0.8)';
-            ctx.beginPath();
-            ctx.arc(x, -pHeight/2 + flowOffset, pWidth/3, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    }
-    
-    // Level 3: Microbumps
-    drawLevel3(ctx) {
-        // Top and bottom substrate
-        ctx.fillStyle = 'rgba(50, 50, 70, 0.6)';
-        ctx.fillRect(-this.viewportRadius, -this.viewportRadius*0.8, this.viewportRadius*2, this.viewportRadius*0.4);
-        ctx.fillRect(-this.viewportRadius, this.viewportRadius*0.4, this.viewportRadius*2, this.viewportRadius*0.4);
-        
-        // Solder bumps connecting them
-        const numBumps = 3;
-        const spacing = this.viewportRadius * 0.6;
-        const startX = -((numBumps - 1) * spacing) / 2;
-        
-        for (let i = 0; i < numBumps; i++) {
-            const x = startX + i * spacing;
-            
-            // Upper pad
-            ctx.fillStyle = '#C0C0C0';
-            ctx.fillRect(x - 30, -this.viewportRadius*0.4, 60, 20);
-            
-            // Lower pad
-            ctx.fillRect(x - 30, this.viewportRadius*0.4 - 20, 60, 20);
-            
-            // The bump (oval-ish)
-            ctx.beginPath();
-            ctx.ellipse(x, 0, 45, 60, 0, 0, Math.PI * 2);
-            
-            const grad = ctx.createRadialGradient(x - 10, -10, 5, x, 0, 50);
-            grad.addColorStop(0, '#FFFFFF');
-            grad.addColorStop(0.5, '#A9A9A9');
-            grad.addColorStop(1, '#696969');
-            
-            ctx.fillStyle = grad;
-            ctx.fill();
-            ctx.strokeStyle = '#4A4A4A';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-        }
-    }
-    
-    // Level 4: Data Traces (Nano scale)
-    drawLevel4(ctx) {
-        ctx.strokeStyle = this.options.colors.primary;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        
-        const paths = [
-            [[-150, -100], [-50, -100], [0, -50], [100, -50], [150, 0]],
-            [[-150, 50], [-100, 50], [-50, 0], [50, 0], [100, 100], [150, 100]],
-            [[-100, -150], [0, -150], [50, -100], [150, -100]],
-            [[-150, 150], [-50, 150], [0, 100], [150, 100]]
-        ];
-        
-        paths.forEach((path, idx) => {
-            // Draw trace
-            ctx.beginPath();
-            ctx.moveTo(path[0][0] * 1.5, path[0][1] * 1.5);
-            for (let i = 1; i < path.length; i++) {
-                ctx.lineTo(path[i][0] * 1.5, path[i][1] * 1.5);
-            }
-            ctx.lineWidth = 4;
-            ctx.strokeStyle = 'rgba(0, 212, 255, 0.4)';
-            ctx.stroke();
-            
-            // Draw glowing data packet moving along trace
-            // Calculate total length roughly
-            const totalLen = path.length * 100;
-            const t = ((this.time * 30 + idx * 200) % totalLen) / totalLen;
-            
-            // Find current segment
-            const segs = path.length - 1;
-            const currentSeg = Math.min(Math.floor(t * segs), segs - 1);
-            const segT = (t * segs) - currentSeg;
-            
-            const p1 = path[currentSeg];
-            const p2 = path[currentSeg + 1];
-            
-            const px = p1[0] + (p2[0] - p1[0]) * segT;
-            const py = p1[1] + (p2[1] - p1[1]) * segT;
-            
-            ctx.beginPath();
-            ctx.arc(px * 1.5, py * 1.5, 6, 0, Math.PI * 2);
-            ctx.fillStyle = '#fff';
-            ctx.shadowColor = this.options.colors.primary;
-            ctx.shadowBlur = 10;
-            ctx.fill();
-            ctx.shadowBlur = 0;
-        });
-    }
-    
-    // --- Icons for comparison ---
-    
-    drawFingernailIcon(ctx) {
-        ctx.strokeStyle = this.options.colors.text;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        // Finger outline
-        ctx.arc(0, 20, 20, Math.PI, 0);
-        ctx.lineTo(20, 40);
-        ctx.lineTo(-20, 40);
-        ctx.closePath();
-        ctx.stroke();
-        
-        // Fingernail
-        ctx.beginPath();
-        ctx.arc(0, 15, 12, Math.PI, 0);
-        ctx.stroke();
-    }
-    
-    drawRiceIcon(ctx) {
-        ctx.strokeStyle = this.options.colors.text;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.ellipse(0, 0, 10, 25, Math.PI / 4, 0, Math.PI * 2);
-        ctx.stroke();
-    }
-    
-    drawHairIcon(ctx) {
-        ctx.strokeStyle = this.options.colors.text;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(-15, -20);
-        ctx.bezierCurveTo(0, -10, -10, 10, 15, 20);
-        ctx.stroke();
-        
-        // Zoom circle to show cross section
-        ctx.beginPath();
-        ctx.arc(-15, -20, 5, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(-15, -20, 2, 0, Math.PI * 2);
-        ctx.fill();
-    }
-    
-    drawRBCIcon(ctx) {
-        ctx.strokeStyle = this.options.colors.text;
-        ctx.fillStyle = 'rgba(255, 107, 53, 0.5)';
-        ctx.lineWidth = 2;
-        
-        for (let i = -1; i <= 1; i++) {
-            ctx.beginPath();
-            ctx.ellipse(i * 15, 0, 8, 12, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-            
-            // Inner dimple
-            ctx.beginPath();
-            ctx.ellipse(i * 15, 0, 3, 5, 0, 0, Math.PI * 2);
-            ctx.stroke();
-        }
-    }
-    
-    drawDNAIcon(ctx) {
-        ctx.strokeStyle = this.options.colors.text;
-        ctx.lineWidth = 2;
-        
-        for (let i = -20; i <= 20; i += 5) {
-            const y = i;
-            const x1 = Math.sin(i * 0.2) * 10;
-            const x2 = Math.sin(i * 0.2 + Math.PI) * 10;
-            
-            ctx.beginPath();
-            ctx.moveTo(x1, y);
-            ctx.lineTo(x2, y);
-            ctx.stroke();
-            
-            ctx.beginPath();
-            ctx.arc(x1, y, 2, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(x2, y, 2, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    }
+  destroy() {
+    this.stop();
+    this.ctx = null;
+    this.canvas = null;
+    this.container = null;
+  }
 };
