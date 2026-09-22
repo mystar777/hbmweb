@@ -11,8 +11,8 @@
   --primary-dim: #0088aa;
   --secondary: #7b2ff7;
   --accent: #ff6b35;
-  --text: #e0e0e0;
-  --text-dim: #8a8a9a;
+  --text: #eef3f6;
+  --text-dim: #b6c3cc;
   --text-bright: #ffffff;
   --glass-border: rgba(0, 212, 255, 0.15);
   --glass-bg: rgba(10, 10, 20, 0.7);
@@ -1171,7 +1171,7 @@ body {
 .scale-intro {
   max-width: 680px;
   margin: 0 auto;
-  color: rgba(215, 230, 239, 0.64);
+  color: rgba(229, 241, 247, 0.86);
   font-size: clamp(0.75rem, 1.1vw, 0.94rem);
 }
 
@@ -1230,7 +1230,7 @@ body {
 }
 
 .scale-level-name .level-index {
-  color: rgba(163, 222, 235, 0.58);
+  color: rgba(190, 235, 244, 0.84);
   font-size: 0.62rem;
   letter-spacing: 0.2em;
 }
@@ -1250,7 +1250,7 @@ body {
   align-items: center;
   gap: 10px;
   transform: translateX(-50%);
-  color: rgba(222, 241, 247, 0.68);
+  color: rgba(232, 247, 251, 0.9);
   font-size: 0.75rem;
   letter-spacing: 0.04em;
   transition: opacity 0.35s ease, transform 0.35s ease;
@@ -1273,7 +1273,7 @@ body {
   align-items: center;
   gap: 10px;
   transform: translateX(-50%);
-  color: rgba(174, 218, 228, 0.58);
+  color: rgba(199, 235, 243, 0.82);
   font-family: var(--font-display);
   font-size: 0.56rem;
   letter-spacing: 0.14em;
@@ -1345,7 +1345,7 @@ body {
 
 .scope-scrub-status output {
   min-width: 110px;
-  color: rgba(213, 242, 248, 0.7);
+  color: rgba(231, 250, 253, 0.92);
   font: inherit;
   letter-spacing: 0.08em;
 }
@@ -1384,7 +1384,7 @@ body {
   right: clamp(54px, 7.5vw, 132px);
   bottom: auto;
   width: clamp(250px, 24vw, 330px);
-  padding: 22px 22px 18px;
+  padding: 18px 20px 16px;
   transform: translateY(-42%);
   text-align: left;
   border-radius: 18px;
@@ -1407,10 +1407,47 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: rgba(190, 230, 240, 0.72);
+  color: rgba(215, 243, 249, 0.92);
   font-family: var(--font-display);
   font-size: 0.64rem;
   letter-spacing: 0.2em;
+}
+
+.scope-source-credit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 7px 9px;
+  color: #def9ff;
+  text-decoration: none;
+  border: 1px solid rgba(91, 219, 246, 0.24);
+  border-radius: 8px;
+  background: rgba(30, 117, 141, 0.12);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.scope-source-credit:hover,
+.scope-source-credit:focus-visible {
+  border-color: rgba(97, 243, 255, 0.8);
+  background: rgba(30, 150, 181, 0.22);
+}
+
+.scope-source-credit span {
+  flex: 0 0 auto;
+  color: #75eaff;
+  font-family: var(--font-display);
+  font-size: 0.54rem;
+  letter-spacing: 0.08em;
+}
+
+.scope-source-credit strong {
+  color: #e9fbff;
+  font-size: 0.6rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: right;
 }
 
 .scope-live-dot {
@@ -1427,7 +1464,7 @@ body {
 }
 
 .scale-info-panel .magnification {
-  margin: 14px 0 16px;
+  margin: 8px 0 10px;
   color: #eafdff;
   font-size: clamp(2.15rem, 4vw, 3.4rem);
   letter-spacing: -0.055em;
@@ -1459,8 +1496,8 @@ body {
   display: grid;
   grid-template-columns: 4px 1fr;
   gap: 10px;
-  height: 70px;
-  margin: 14px 0;
+  height: 54px;
+  margin: 10px 0;
 }
 
 .scope-meter-track {
@@ -1486,30 +1523,49 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  color: rgba(173, 217, 227, 0.48);
+  color: rgba(201, 235, 243, 0.76);
   font-family: var(--font-display);
   font-size: 0.58rem;
   letter-spacing: 0.08em;
 }
 
+.scope-explanation {
+  padding: 10px 11px;
+  border: 1px solid rgba(137, 209, 224, 0.13);
+  border-radius: 10px;
+  background: rgba(214, 244, 250, 0.045);
+}
+
+.scope-explanation > span {
+  display: block;
+  margin-bottom: 5px;
+  color: #8cecff;
+  font-family: var(--font-display);
+  font-size: 0.54rem;
+  letter-spacing: 0.1em;
+}
+
 .scale-info-panel .comparison-text {
-  min-height: 54px;
-  margin-top: 0;
-  color: rgba(225, 238, 242, 0.76);
-  font-size: 0.75rem;
-  line-height: 1.7;
+  min-height: 0;
+  margin: 0;
+  color: rgba(239, 248, 250, 0.94);
+  font-size: 0.76rem;
+  line-height: 1.58;
   text-align: left;
 }
 
 .scope-comparison {
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(137, 209, 224, 0.1);
+  margin-top: 10px;
+  padding: 11px 12px;
+  border: 1px solid rgba(76, 225, 255, 0.34);
+  border-radius: 11px;
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.14), rgba(55, 115, 153, 0.08));
+  box-shadow: inset 3px 0 0 rgba(56, 224, 255, 0.9), 0 8px 26px rgba(0, 0, 0, 0.16);
 }
 
 .scope-comparison-label {
   display: block;
-  color: rgba(173, 217, 227, 0.48);
+  color: #8cecff;
   font-family: var(--font-display);
   font-size: 0.58rem;
   letter-spacing: 0.12em;
@@ -1519,21 +1575,23 @@ body {
 .scope-comparison strong {
   display: block;
   margin-top: 5px;
-  color: #eafdff;
-  font-size: 0.78rem;
+  color: #ffffff;
+  font-size: 0.94rem;
+  line-height: 1.4;
+  text-shadow: 0 0 16px rgba(82, 231, 255, 0.24);
 }
 
 .scope-comparison small {
   display: block;
   margin-top: 3px;
-  color: rgba(225, 238, 242, 0.58);
-  font-size: 0.65rem;
+  color: rgba(232, 247, 250, 0.82);
+  font-size: 0.67rem;
   line-height: 1.45;
 }
 
 .scope-reference-ladder {
-  margin-top: 14px;
-  padding-top: 12px;
+  margin-top: 10px;
+  padding-top: 9px;
   border-top: 1px solid rgba(137, 209, 224, 0.1);
 }
 
@@ -1543,14 +1601,14 @@ body {
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 7px;
-  color: rgba(173, 217, 227, 0.48);
+  color: rgba(202, 237, 244, 0.8);
   font-family: var(--font-display);
   font-size: 0.55rem;
   letter-spacing: 0.12em;
 }
 
 .scope-reference-heading small {
-  color: rgba(225, 238, 242, 0.42);
+  color: rgba(226, 242, 246, 0.72);
   font-family: var(--font-body);
   font-size: 0.58rem;
   letter-spacing: 0;
@@ -1561,10 +1619,10 @@ body {
   grid-template-columns: 50px 1fr;
   gap: 9px;
   align-items: center;
-  min-height: 30px;
-  padding: 4px 7px;
+  min-height: 27px;
+  padding: 3px 7px;
   border-left: 2px solid transparent;
-  opacity: 0.46;
+  opacity: 0.72;
   transition: opacity 0.25s ease, border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
 }
 
@@ -1576,7 +1634,7 @@ body {
 }
 
 .scope-reference-mag {
-  color: rgba(150, 222, 236, 0.7);
+  color: rgba(179, 235, 246, 0.9);
   font-family: var(--font-display);
   font-size: 0.58rem;
   letter-spacing: -0.03em;
@@ -1596,29 +1654,29 @@ body {
 }
 
 .scope-reference-copy strong {
-  color: rgba(225, 241, 245, 0.82);
+  color: rgba(240, 249, 251, 0.96);
   font-size: 0.64rem;
   font-weight: 600;
 }
 
 .scope-reference-copy small {
   margin-top: 1px;
-  color: rgba(181, 213, 221, 0.52);
+  color: rgba(207, 231, 237, 0.78);
   font-size: 0.59rem;
 }
 
 .scope-stage-buttons {
   display: flex;
   gap: 8px;
-  margin-top: 16px;
+  margin-top: 10px;
 }
 
 .scope-stage-buttons button {
   width: 28px;
   height: 28px;
-  border: 1px solid rgba(114, 208, 228, 0.2);
+  border: 1px solid rgba(114, 208, 228, 0.38);
   border-radius: 50%;
-  color: rgba(192, 224, 232, 0.48);
+  color: rgba(217, 240, 245, 0.8);
   background: rgba(6, 16, 25, 0.8);
   font-family: var(--font-display);
   font-size: 0.6rem;
@@ -1637,6 +1695,16 @@ body {
 
 .scale-scroll-space {
   height: 500vh;
+}
+
+@media (max-height: 800px) and (min-width: 901px) {
+  .scope-meter {
+    display: none;
+  }
+
+  .scale-info-panel {
+    transform: translateY(-45%);
+  }
 }
 
 /* Evolution archive: one generation dissolves into code, then reforms as the next. */
@@ -1734,7 +1802,7 @@ body {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   margin-top: 10px;
-  color: rgba(173, 217, 227, 0.58);
+  color: rgba(204, 237, 244, 0.82);
   font-family: var(--font-display);
   font-size: 0.58rem;
 }
@@ -1751,7 +1819,7 @@ body {
 .evo-scrubber-scale span:last-child { text-align: right; align-items: flex-end; }
 
 .evo-scrubber-scale small {
-  color: rgba(173, 217, 227, 0.34);
+  color: rgba(204, 232, 238, 0.7);
   font: inherit;
   font-size: 0.52rem;
 }
@@ -1940,7 +2008,7 @@ body {
   justify-content: space-between;
   padding-bottom: 20px;
   border-bottom: 1px solid rgba(119, 216, 239, 0.12);
-  color: rgba(198, 239, 247, 0.55);
+  color: rgba(218, 246, 251, 0.82);
   font-family: var(--font-display);
   font-size: 0.62rem;
   letter-spacing: 0.13em;
@@ -1962,7 +2030,7 @@ body {
 }
 
 .evo-counter {
-  color: rgba(198, 239, 247, 0.45);
+  color: rgba(215, 242, 248, 0.76);
 }
 
 .evo-counter span {
@@ -2144,7 +2212,7 @@ body {
   position: absolute;
   right: 7px;
   bottom: 2px;
-  color: rgba(200, 241, 250, 0.5);
+  color: rgba(219, 247, 252, 0.8);
   font-family: var(--font-display);
   font-size: 0.58rem;
   letter-spacing: 0.1em;
@@ -2168,7 +2236,7 @@ body {
 .evo-spec-cell span,
 .evo-spec-cell small {
   display: block;
-  color: rgba(177, 221, 231, 0.48);
+  color: rgba(207, 236, 243, 0.8);
   font-size: 0.59rem;
 }
 
@@ -2195,7 +2263,7 @@ body {
 }
 
 .evo-meter-copy span {
-  color: rgba(177, 221, 231, 0.45);
+  color: rgba(207, 236, 243, 0.78);
   font-family: var(--font-display);
   font-size: 0.54rem;
   letter-spacing: 0.08em;
@@ -2425,7 +2493,7 @@ body {
   justify-content: space-between;
   gap: 16px;
   padding: 10px 14px;
-  color: rgba(195, 218, 226, 0.62);
+  color: rgba(222, 238, 243, 0.84);
   font-family: var(--font-display);
   font-size: 0.57rem;
   letter-spacing: 0.06em;
@@ -2488,7 +2556,7 @@ body {
 }
 
 .payload-flow-label small {
-  color: rgba(173, 201, 211, 0.48);
+  color: rgba(207, 228, 235, 0.76);
   font-size: 0.58rem;
 }
 
@@ -2527,7 +2595,7 @@ body {
 
 .memory-endpoint small {
   margin-top: 4px;
-  color: rgba(171, 224, 235, 0.52);
+  color: rgba(208, 241, 247, 0.78);
   font-size: 0.48rem;
 }
 
@@ -2553,7 +2621,7 @@ body {
   grid-template-columns: 120px minmax(120px, 1fr) 72px;
   gap: 14px;
   align-items: center;
-  color: rgba(222, 237, 241, 0.72);
+  color: rgba(237, 247, 249, 0.9);
   font-size: 0.75rem;
 }
 
@@ -2591,7 +2659,7 @@ body {
 
 .lab-note {
   margin-top: 14px;
-  color: rgba(150, 169, 177, 0.58);
+  color: rgba(203, 219, 225, 0.82);
   font-size: 0.66rem;
 }
 
@@ -2609,13 +2677,13 @@ body {
 }
 
 .museum-sources span {
-  color: rgba(146, 214, 228, 0.5);
+  color: rgba(181, 232, 242, 0.8);
   font-family: var(--font-display);
   letter-spacing: 0.14em;
 }
 
 .museum-sources a {
-  color: rgba(220, 239, 244, 0.65);
+  color: rgba(232, 246, 249, 0.86);
   text-decoration: none;
   transition: color 0.2s ease;
 }

@@ -22,28 +22,28 @@ window.HBM.ScaleDive = class {
     this.stages = [
       {
         name: '반도체 샘플', target: '칩 샘플 전체', spanNm: 60_000,
-        magnification: 1, description: '현미경 렌즈 안의 실제 반도체 샘플 전체를 보고 있습니다.',
-        comparison: '머리카락 한 올과 비슷한 폭', comparisonNote: '×1 · 시야 폭 약 60 μm · 머리카락 ≈ 70 μm',
+        magnification: 1, description: '청색 원 안의 작은 사각형이 반도체 칩입니다. 지금은 칩 전체의 윤곽과 큰 기능 구역을 보는 단계입니다.',
+        comparison: '머리카락 한 올 굵기와 거의 같아요', comparisonNote: '×1 · 시야 폭 약 60 μm · 머리카락 한 올 ≈ 70 μm',
       },
       {
         name: '다이 패턴', target: '기능 블록과 패턴', spanNm: 10_000,
-        magnification: 6, description: '칩을 이루는 기능 블록과 반복 패턴이 분리되어 보이기 시작합니다.',
-        comparison: '적혈구 한 개의 지름', comparisonNote: '×6 · 시야 폭 약 10 μm · 적혈구 ≈ 8 μm',
+        magnification: 6, description: '칩 안쪽으로 들어오면 연산과 저장 영역을 나누는 큰 기능 블록과 반복 패턴이 보이기 시작합니다.',
+        comparison: '적혈구 한 개의 지름과 비슷해요', comparisonNote: '×6 · 시야 폭 약 10 μm · 적혈구 하나 ≈ 8 μm',
       },
       {
         name: '금속 배선층', target: '배선 네트워크', spanNm: 1_000,
-        magnification: 60, description: '신호와 전력을 운반하는 금속 배선이 도로망처럼 연결됩니다.',
-        comparison: '세균 한 마리의 길이', comparisonNote: '×60 · 시야 폭 약 1 μm · 대장균 폭 ≈ 1 μm',
+        magnification: 60, description: '밝고 어두운 선들은 전력과 신호가 이동하는 금속 배선층입니다. 도시의 도로망처럼 칩 내부를 연결합니다.',
+        comparison: '세균 한 마리의 폭 정도예요', comparisonNote: '×60 · 시야 폭 약 1 μm · 대장균의 폭 ≈ 1 μm',
       },
       {
         name: '미세 배선', target: '셀 주변 연결', spanNm: 100,
-        magnification: 600, description: '트랜지스터와 셀을 잇는 미세 연결 구조가 촘촘하게 드러납니다.',
-        comparison: '작은 바이러스 한 개', comparisonNote: '×600 · 시야 폭 약 100 nm · 바이러스 ≈ 80–120 nm',
+        magnification: 600, description: '굵은 배선 사이로 트랜지스터와 메모리 셀을 잇는 더 촘촘한 연결이 드러납니다. 데이터는 이 미세한 길을 따라 이동합니다.',
+        comparison: '작은 바이러스 하나 크기예요', comparisonNote: '×600 · 시야 폭 약 100 nm · 작은 바이러스 ≈ 80–120 nm',
       },
       {
         name: '5 nm 공정 영역', target: '나노 구조', spanNm: 5,
-        magnification: 12_000, description: '5 nm는 공정 세대의 이름이며, 화면 속 한 선의 실제 폭과 정확히 같다는 뜻은 아닙니다.',
-        comparison: 'DNA 이중나선 폭의 약 2.5배', comparisonNote: '×12K · 기준 폭 5 nm · DNA ≈ 2 nm',
+        magnification: 12_000, description: '가장 작은 공정 단계입니다. 5 nm는 공정 세대의 이름이며, 화면 속 모든 선의 실제 폭이 5 nm라는 뜻은 아닙니다.',
+        comparison: 'DNA 이중나선 폭의 약 2.5배예요', comparisonNote: '×12,000 · 기준 폭 5 nm · DNA 이중나선 ≈ 2 nm',
       },
     ];
 
@@ -459,9 +459,7 @@ window.HBM.ScaleDive = class {
     const next = this.stages[state.nextIndex];
     const magnification = this.interpolateLog(stage.magnification, next.magnification, state.local);
     const spanNm = this.interpolateLog(stage.spanNm, next.spanNm, state.local);
-    const displayMagnification = magnification >= 1_000
-      ? `×${(magnification / 1_000).toFixed(magnification >= 10_000 ? 0 : 1)}K`
-      : `×${Math.round(magnification)}`;
+    const displayMagnification = `×${Math.round(magnification).toLocaleString('ko-KR')}`;
     const displaySize = spanNm >= 999.5
       ? `${(spanNm / 1_000).toFixed(spanNm >= 10_000 ? 0 : 1)} μm`
       : `${spanNm.toFixed(spanNm >= 100 ? 0 : 1)} nm`;
