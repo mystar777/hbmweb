@@ -108,13 +108,25 @@
           <p class="scene-label fade-element">CHAPTER 02</p>
           <h2 class="scene-title fade-element" data-delay="200">이것이<br><span class="accent">HBM</span>이다</h2>
           <p class="scene-desc fade-element" data-delay="400">
-            건물을 세로로 쌓듯,<br>
-            메모리를 수직으로 적층했습니다.<br><br>
-            <strong>8~16개의 DRAM 다이</strong>가<br>
-            초미세 관통 전극(TSV)으로 연결되어<br>
-            하나의 칩 안에 <strong>초고속 데이터 고속도로</strong>를<br>
-            만들어냅니다.
+            아파트를 위로 쌓아 같은 땅에 더 많은 집을 넣듯,<br>
+            HBM은 여러 장의 DRAM을 수직으로 적층합니다.<br><br>
+            각 층은 실리콘을 관통하는 <strong>TSV</strong>로 이어지고,<br>
+            GPU 바로 옆에서 <strong>넓고 짧은 데이터 길</strong>을 만듭니다.
           </p>
+          <div class="stack-lab fade-element" data-delay="600">
+            <div class="stack-lab-heading">
+              <span>전시 체험 · HBM 분해하기</span>
+              <output id="stack-gap-value" for="stack-explode">조립 상태</output>
+            </div>
+            <label class="sr-only" for="stack-explode">HBM 적층 간격</label>
+            <input id="stack-explode" type="range" min="0" max="100" value="0" step="1">
+            <p>슬라이더를 움직여 층 사이의 TSV 연결을 살펴보세요.</p>
+          </div>
+          <aside class="layer-detail-panel" id="layer-detail" aria-live="polite">
+            <span class="detail-kicker">TOUCH A LAYER</span>
+            <strong>층을 눌러 역할을 확인하세요</strong>
+            <p>DRAM 다이, 베이스 다이, 방열 구조가 한 패키지에서 협력합니다.</p>
+          </aside>
         </div>
         <div class="hbm-stack-3d" id="hbm-stack">
           <div class="stack-perspective">
@@ -161,16 +173,36 @@
         <div class="scale-header">
           <p class="scene-label fade-element">CHAPTER 03</p>
           <h2 class="scene-title fade-element" data-delay="200">나노의 세계로</h2>
+          <p class="scale-intro fade-element" data-delay="350">우주에서 도로 위 사람을 찾듯, HBM 패키지에서 단 하나의 메모리 셀까지 내려갑니다.</p>
         </div>
         <div class="scale-viewport-container" id="scale-viewport">
-          <!-- Canvas draws the microscope viewport here -->
-          <canvas id="scale-canvas"></canvas>
-          <div class="scale-info-panel" id="scale-info">
-            <div class="magnification" id="magnification">×1</div>
-            <div class="current-size" id="current-size">31mm × 31mm</div>
-            <div class="comparison-text" id="comparison-text">손톱 크기와 비슷합니다</div>
+          <canvas id="scale-canvas" aria-label="HBM 패키지에서 나노미터 DRAM 셀까지 확대하는 대화형 현미경"></canvas>
+          <div class="scale-level-name" id="scale-level-name">
+            <span class="level-index">01 / 05</span>
+            <strong>HBM 패키지</strong>
           </div>
-          <div class="scale-level-name" id="scale-level-name">HBM 패키지</div>
+          <div class="scale-gesture-hint" id="scale-gesture-hint">
+            <span class="gesture-mouse" aria-hidden="true"></span>
+            스크롤하거나 원을 위로 드래그하세요
+          </div>
+          <div class="scale-info-panel" id="scale-info">
+            <div class="scope-heading"><span class="scope-live-dot"></span>LIVE SCOPE</div>
+            <div class="magnification" id="magnification">×1</div>
+            <div class="scope-readout-row"><span>시야 폭</span><strong id="current-size">35 mm</strong></div>
+            <div class="scope-readout-row"><span>관찰 대상</span><strong id="scope-target">패키지 전체</strong></div>
+            <div class="scope-meter" aria-hidden="true">
+              <div class="scope-meter-track"><span id="scope-meter-fill"></span></div>
+              <div class="scope-meter-labels"><span>mm</span><span>μm</span><span>nm</span></div>
+            </div>
+            <p class="comparison-text" id="comparison-text">GPU 옆에 놓이는 3차원 메모리 묶음입니다.</p>
+            <div class="scope-stage-buttons" id="scope-stage-buttons" aria-label="확대 단계 선택">
+              <button type="button" data-scale-stage="0" class="active" aria-label="HBM 패키지 단계">1</button>
+              <button type="button" data-scale-stage="1" aria-label="적층 DRAM 단계">2</button>
+              <button type="button" data-scale-stage="2" aria-label="DRAM 다이 단계">3</button>
+              <button type="button" data-scale-stage="3" aria-label="TSV 단계">4</button>
+              <button type="button" data-scale-stage="4" aria-label="나노미터 DRAM 셀 단계">5</button>
+            </div>
+          </div>
         </div>
         <!-- Extra scroll height for zoom interaction -->
         <div class="scale-scroll-space"></div>
@@ -217,9 +249,33 @@
             </div>
           </div>
         </div>
+        <section class="bandwidth-lab fade-element" data-delay="300" aria-labelledby="bandwidth-lab-title">
+          <div class="lab-copy">
+            <span class="detail-kicker">HANDS-ON 02</span>
+            <h3 id="bandwidth-lab-title">AI 모델을 메모리에서 꺼내보세요</h3>
+            <p>같은 양의 데이터를 한 번 읽을 때, 길의 폭이 체감 시간을 어떻게 바꾸는지 비교합니다.</p>
+          </div>
+          <div class="payload-control">
+            <div class="payload-label"><label for="payload-slider">데이터 크기</label><output id="payload-value" for="payload-slider">1 TB</output></div>
+            <input id="payload-slider" type="range" min="1" max="24" value="1" step="1">
+          </div>
+          <div class="race-results" aria-live="polite">
+            <div class="race-row ddr-race">
+              <span>DDR5 한 채널</span>
+              <div class="race-track"><i id="ddr-race-bar"></i></div>
+              <strong id="ddr-time">20.0초</strong>
+            </div>
+            <div class="race-row hbm-race">
+              <span>HBM3E 한 스택</span>
+              <div class="race-track"><i id="hbm-race-bar"></i></div>
+              <strong id="hbm-time">0.87초</strong>
+            </div>
+          </div>
+          <p class="lab-note">이론상 최대 대역폭으로 단순 계산한 비교입니다. 실제 시스템 성능은 접근 패턴과 하드웨어 구성에 따라 달라집니다.</p>
+        </section>
         <p class="dataflow-desc fade-element" data-delay="400">
           HBM은 <strong>1,024비트</strong>의 초광폭 데이터 버스를 통해<br>
-          기존 메모리 대비 <strong>23배</strong> 빠른 속도로 데이터를 전송합니다
+          이 예시의 DDR5 한 채널보다 약 <strong>23배 넓은 대역폭</strong>을 제공합니다
         </p>
       </div>
     </section>
@@ -309,7 +365,7 @@
               <p class="evo-note">테라바이트 시대. 현세대 AI 가속기의 핵심.</p>
             </div>
           </div>
-          <div class="evo-item" data-gen="hbm4" data-year="2026" data-bw="3300" data-cap="64" data-stack="16">
+          <div class="evo-item" data-gen="hbm4" data-year="2026" data-bw="3300" data-cap="48" data-stack="16">
             <div class="evo-year">2026</div>
             <div class="evo-card featured">
               <h3>HBM4</h3>
@@ -318,8 +374,8 @@
               </div>
               <div class="evo-specs">
                 <span>3.3 TB/s</span>
-                <span>64 GB</span>
-                <span>16단 적층</span>
+                <span>최대 48 GB</span>
+                <span>16단 샘플</span>
               </div>
               <p class="evo-note">2048-bit 인터페이스. 트릴리온 파라미터 모델의 시대.</p>
             </div>
@@ -357,6 +413,13 @@
               <div class="stat-label">bit 인터페이스</div>
             </div>
           </div>
+        </div>
+        <div class="museum-sources fade-element" data-delay="850">
+          <span>CURATOR'S SOURCES</span>
+          <a href="https://assets.micron.com/adobe/assets/urn%3Aaaid%3Aaem%3Ab710d8f2-7f66-44c1-a234-456e2b986347/original/as/hbm3e-product-brief.pdf" target="_blank" rel="noopener">Micron HBM3E</a>
+          <a href="https://news.skhynix.com/en/small-size-big-impact/" target="_blank" rel="noopener">SK hynix TSV · MR-MUF</a>
+          <a href="https://www.micron.com/about/blog/memory/dram/inside-1a-the-worlds-most-advanced-dram-process-technology" target="_blank" rel="noopener">DRAM 공정 세대</a>
+          <a href="https://news.samsung.com/global/samsung-ships-industry-first-commercial-hbm4-with-ultimate-performance-for-ai-computing" target="_blank" rel="noopener">Samsung HBM4</a>
         </div>
         <div class="credits fade-element" data-delay="1000">
           <p>HBM Interactive Experience</p>

@@ -127,17 +127,24 @@ async function build() {
   // Replace CSS link
   html = html.replace(
     '<link rel="stylesheet" href="css/styles.css">',
-    '<link rel="stylesheet" href="build/styles.min.css">'
+    '<link rel="stylesheet" href="styles.min.css">'
   );
 
   // Replace script tags with single bundle
   html = html.replace(
     /\s*<script src="js\/particles\.js"><\/script>\s*<script src="js\/scale-dive\.js"><\/script>\s*<script src="js\/scenes\.js"><\/script>\s*<script src="js\/app\.js"><\/script>/,
-    '\n  <script src="build/bundle.min.js"></script>'
+    '\n  <script src="bundle.min.js"></script>'
   );
 
   fs.writeFileSync(path.join(buildDir, 'index.html'), html);
   console.log('   ✅ build/index.html written');
+
+  // ---- 6. Copy static assets ----
+  const assetsDir = path.join(__dirname, 'assets');
+  if (fs.existsSync(assetsDir)) {
+    fs.cpSync(assetsDir, path.join(buildDir, 'assets'), { recursive: true });
+    console.log('   ✅ build/assets copied');
+  }
 
   console.log('\n🎉 Build complete! Open build/index.html to see the production version.\n');
 }
