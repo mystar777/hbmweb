@@ -29,8 +29,9 @@ window.HBM.ScaleDive = class {
         scaleBar: '10 mm',
         scaleBarNm: 10_000_000,
         description: 'GPU 옆에 놓이는 3차원 메모리 묶음입니다.',
-        comparison: '지우개 한 조각',
-        comparisonNote: '현재 시야 폭 약 35 mm',
+        comparison: '손톱 3개를 나란히 놓은 폭',
+        comparisonNote: '×1 · 현재 시야 폭 약 35 mm',
+        focal: { x: 0.52, y: 0.48 },
         image: 'assets/scale-dive/01-hbm-package.jpg',
       },
       {
@@ -41,8 +42,9 @@ window.HBM.ScaleDive = class {
         scaleBar: '250 μm',
         scaleBarNm: 250_000,
         description: '얇은 DRAM 여러 장을 쌓아 같은 면적에 더 많은 데이터를 담습니다.',
-        comparison: '머리카락 10가닥',
-        comparisonNote: '현재 시야 폭 약 1 mm',
+        comparison: '바늘구멍 두 개를 나란히 놓은 폭',
+        comparisonNote: '×35 · 현재 시야 폭 약 1 mm',
+        focal: { x: 0.5, y: 0.5 },
         image: 'assets/scale-dive/02-hbm-stack.jpg',
       },
       {
@@ -54,7 +56,8 @@ window.HBM.ScaleDive = class {
         scaleBarNm: 25_000,
         description: '수많은 메모리 셀이 바둑판처럼 반복되는 저장 공간입니다.',
         comparison: '머리카락 굵기',
-        comparisonNote: '현재 시야 폭 약 100 μm · 머리카락 ≈ 70 μm',
+        comparisonNote: '×350 · 현재 시야 폭 약 100 μm · 머리카락 ≈ 70 μm',
+        focal: { x: 0.5, y: 0.48 },
         image: 'assets/scale-dive/03-dram-die.jpg',
       },
       {
@@ -66,7 +69,8 @@ window.HBM.ScaleDive = class {
         scaleBarNm: 2_000,
         description: '수 μm급 구리 통로가 층과 층 사이를 엘리베이터처럼 연결합니다.',
         comparison: '적혈구 1개',
-        comparisonNote: '현재 시야 폭 약 10 μm · 적혈구 ≈ 8 μm',
+        comparisonNote: '×3.5K · 현재 시야 폭 약 10 μm · 적혈구 ≈ 8 μm',
+        focal: { x: 0.52, y: 0.5 },
         image: 'assets/scale-dive/04-tsv.jpg',
       },
       {
@@ -78,7 +82,8 @@ window.HBM.ScaleDive = class {
         scaleBarNm: 5,
         description: '10 nm급 공정 세대의 셀과 배선입니다. 공정 이름은 한 부품의 실제 치수와 같지 않습니다.',
         comparison: 'DNA 폭의 약 10배',
-        comparisonNote: '현재 시야 폭 약 20 nm · DNA ≈ 2 nm',
+        comparisonNote: '×1.75M · 현재 시야 폭 약 20 nm · DNA ≈ 2 nm',
+        focal: { x: 0.5, y: 0.5 },
         image: 'assets/scale-dive/05-dram-cell.jpg',
       },
     ];
@@ -114,6 +119,7 @@ window.HBM.ScaleDive = class {
       description: document.getElementById('comparison-text'),
       comparison: document.getElementById('scope-comparison'),
       comparisonNote: document.getElementById('scope-comparison-note'),
+      references: Array.from(document.querySelectorAll('[data-reference-index]')),
       levelName: document.getElementById('scale-level-name'),
       meter: document.getElementById('scope-meter-fill'),
       hint: document.getElementById('scale-gesture-hint'),
@@ -259,10 +265,11 @@ window.HBM.ScaleDive = class {
     ctx.arc(this.centerX, this.centerY, this.viewportRadius, 0, Math.PI * 2);
     ctx.clip();
 
-    const motionBlur = Math.min(Math.abs(this.velocity) * 800, 2.2) * dpr;
+    const motionBlur = Math.min(Math.abs(this.velocity) * 360, 1.35) * dpr;
     this.drawStageImage(ctx, state.index, state.local, 1 - blend, motionBlur, false);
     if (blend > 0) this.drawStageImage(ctx, state.nextIndex, blend, blend, motionBlur, true);
-    this.drawOpticalTexture(ctx, state.index);
+    this.drawDiveParticles(ctx, state);
+    this.drawOpticalTexture(ctx, state);
     ctx.restore();
 
     this.drawLens(ctx);
@@ -306,16 +313,29 @@ window.HBM.ScaleDive = class {
     }
 
     const baseSize = this.viewportRadius * 2.06;
-    const zoom = incoming ? 0.58 + local * 0.42 : 1 + local * 0.82;
-    const drift = Math.sin(this.time * 0.7 + index) * this.viewportRadius * 0.008;
+    // Both feeds stay full-frame inside the lens. The outgoing feed pushes
+    // through the focal plane while the incoming feed racks into focus; this
+    // reads as a continuous optical dive instead of a small image being
+    // revealed on top of another still.
+    const zoom = incoming ? 0.76 + local * 0.24 : 1 + local * 0.72;
+    const drift = Math.sin(this.time * 0.7 + index) * this.viewportRadius * 0.018;
+    const focal = this.stages[index].focal || { x: 0.5, y: 0.5 };
+    const sourceZoom = 1 + local * 0.24;
+    const sourceWidth = image.naturalWidth / sourceZoom;
+    const sourceHeight = image.naturalHeight / sourceZoom;
+    const wanderX = Math.sin(this.time * 0.42 + index * 1.7) * sourceWidth * 0.018;
+    const wanderY = Math.cos(this.time * 0.36 + index * 1.3) * sourceHeight * 0.014;
+    const sourceX = Math.max(0, Math.min(image.naturalWidth - sourceWidth, image.naturalWidth * focal.x - sourceWidth / 2 + wanderX));
+    const sourceY = Math.max(0, Math.min(image.naturalHeight - sourceHeight, image.naturalHeight * focal.y - sourceHeight / 2 + wanderY));
 
     ctx.save();
     ctx.globalAlpha = opacity;
-    ctx.filter = `saturate(${1.03 + index * 0.025}) contrast(1.05) blur(${blur}px)`;
+    const focusHunt = incoming ? (1 - this.smoothstep(0.12, 0.82, local)) * 0.55 : 0;
+    ctx.filter = `saturate(${1.06 + index * 0.03}) contrast(1.08) blur(${blur + focusHunt}px)`;
     ctx.translate(this.centerX + drift, this.centerY - drift * 0.45);
     ctx.rotate(Math.sin(this.time * 0.28 + index) * 0.0025);
     ctx.scale(zoom, zoom);
-    ctx.drawImage(image, -baseSize / 2, -baseSize / 2, baseSize, baseSize);
+    ctx.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, -baseSize / 2, -baseSize / 2, baseSize, baseSize);
     ctx.restore();
   }
 
@@ -341,7 +361,50 @@ window.HBM.ScaleDive = class {
     ctx.globalAlpha = 1;
   }
 
-  drawOpticalTexture(ctx, stageIndex) {
+  drawDiveParticles(ctx, state) {
+    const radius = this.viewportRadius;
+    const intensity = 0.08 + state.index * 0.018;
+    const motion = this.reducedMotion ? 0 : this.time;
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    for (let i = 0; i < 18; i += 1) {
+      const phase = (motion * (0.16 + (i % 4) * 0.035) + i * 0.137 + this.progress * 1.8) % 1;
+      const angle = i * 2.399 + Math.sin(motion * 0.18 + i) * 0.08;
+      const distance = radius * (0.16 + phase * 0.86);
+      const x = this.centerX + Math.cos(angle) * distance;
+      const y = this.centerY + Math.sin(angle) * distance;
+      const alpha = intensity * (1 - phase) * (0.45 + (i % 3) * 0.16);
+      const size = Math.max(1.2, radius * (0.003 + (i % 3) * 0.001));
+
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(115, 226, 255, ${alpha})`;
+      ctx.shadowBlur = radius * 0.025;
+      ctx.shadowColor = 'rgba(91, 221, 255, 0.7)';
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x - Math.cos(angle) * radius * 0.045, y - Math.sin(angle) * radius * 0.045);
+      ctx.strokeStyle = `rgba(107, 210, 255, ${alpha * 0.35})`;
+      ctx.lineWidth = Math.max(1, size * 0.7);
+      ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+
+    const focusY = this.centerY + Math.sin(motion * 0.46) * radius * 0.16;
+    const focusGradient = ctx.createLinearGradient(0, focusY - radius * 0.08, 0, focusY + radius * 0.08);
+    focusGradient.addColorStop(0, 'rgba(95, 224, 255, 0)');
+    focusGradient.addColorStop(0.5, `rgba(95, 224, 255, ${0.04 + state.local * 0.035})`);
+    focusGradient.addColorStop(1, 'rgba(95, 224, 255, 0)');
+    ctx.fillStyle = focusGradient;
+    ctx.fillRect(this.centerX - radius, focusY - radius * 0.08, radius * 2, radius * 0.16);
+    ctx.restore();
+  }
+
+  drawOpticalTexture(ctx, state) {
+    const stageIndex = state.index;
     const radius = this.viewportRadius;
     const vignette = ctx.createRadialGradient(
       this.centerX,
@@ -366,6 +429,19 @@ window.HBM.ScaleDive = class {
     scan.addColorStop(1, 'rgba(58,220,255,0)');
     ctx.fillStyle = scan;
     ctx.fillRect(this.centerX - radius, scanY - 20, radius * 2, 40);
+    ctx.restore();
+
+    // A restrained film grain keeps the feed alive between scroll events,
+    // making it read as an instrument camera rather than a photo carousel.
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    for (let i = 0; i < 90; i += 1) {
+      const seed = i * 12.9898 + this.time * 19.17;
+      const x = this.centerX - radius + ((Math.sin(seed) + 1) * 0.5) * radius * 2;
+      const y = this.centerY - radius + ((Math.sin(seed * 1.71) + 1) * 0.5) * radius * 2;
+      ctx.fillStyle = `rgba(195, 240, 255, ${0.012 + ((i % 5) * 0.004)})`;
+      ctx.fillRect(x, y, 1, 1);
+    }
     ctx.restore();
   }
 
@@ -475,6 +551,14 @@ window.HBM.ScaleDive = class {
     if (this.ui.description) this.ui.description.textContent = stage.description;
     if (this.ui.comparison) this.ui.comparison.textContent = stage.comparison;
     if (this.ui.comparisonNote) this.ui.comparisonNote.textContent = stage.comparisonNote;
+    if (this.ui.references.length) {
+      this.ui.references.forEach((reference) => {
+        const referenceIndex = Number(reference.dataset.referenceIndex);
+        const active = referenceIndex === displayIndex;
+        reference.classList.toggle('is-active', active);
+        reference.setAttribute('aria-current', active ? 'step' : 'false');
+      });
+    }
     if (this.ui.meter) this.ui.meter.style.height = `${Math.max(2, this.progress * 100)}%`;
 
     if (this.ui.levelName) {

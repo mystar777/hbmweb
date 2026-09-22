@@ -186,7 +186,7 @@
             스크롤하거나 원을 위로 드래그하세요
           </div>
           <div class="scale-info-panel" id="scale-info">
-            <div class="scope-heading"><span class="scope-live-dot"></span>LIVE SCOPE</div>
+            <div class="scope-heading"><span class="scope-live-dot"></span>LIVE OPTICAL FEED</div>
             <div class="magnification" id="magnification">×1</div>
             <div class="scope-readout-row"><span>시야 폭</span><strong id="current-size">35 mm</strong></div>
             <div class="scope-readout-row"><span>관찰 대상</span><strong id="scope-target">패키지 전체</strong></div>
@@ -197,8 +197,31 @@
             <p class="comparison-text" id="comparison-text">GPU 옆에 놓이는 3차원 메모리 묶음입니다.</p>
             <div class="scope-comparison" aria-live="polite">
               <span class="scope-comparison-label">크기 비교</span>
-              <strong id="scope-comparison">지우개 한 조각</strong>
-              <small id="scope-comparison-note">현재 시야 폭 약 35 mm</small>
+              <strong id="scope-comparison">손톱 3개를 나란히 놓은 폭</strong>
+              <small id="scope-comparison-note">×1 · 현재 시야 폭 약 35 mm</small>
+            </div>
+            <div class="scope-reference-ladder" id="scope-reference-ladder" aria-label="배율별 실제 크기 비교">
+              <div class="scope-reference-heading"><span>REFERENCE SCALE</span><small>실제 크기 감각</small></div>
+              <div class="scope-reference-item is-active" data-reference-index="0">
+                <span class="scope-reference-mag">×1</span>
+                <span class="scope-reference-copy"><strong>HBM 패키지</strong><small>35 mm · 손톱 3개 폭</small></span>
+              </div>
+              <div class="scope-reference-item" data-reference-index="1">
+                <span class="scope-reference-mag">×35</span>
+                <span class="scope-reference-copy"><strong>적층 DRAM</strong><small>1 mm · 바늘구멍 2개</small></span>
+              </div>
+              <div class="scope-reference-item" data-reference-index="2">
+                <span class="scope-reference-mag">×350</span>
+                <span class="scope-reference-copy"><strong>DRAM 다이</strong><small>100 μm · 머리카락 한 올</small></span>
+              </div>
+              <div class="scope-reference-item" data-reference-index="3">
+                <span class="scope-reference-mag">×3.5K</span>
+                <span class="scope-reference-copy"><strong>TSV · 범프</strong><small>10 μm · 적혈구 한 개</small></span>
+              </div>
+              <div class="scope-reference-item" data-reference-index="4">
+                <span class="scope-reference-mag">×1.75M</span>
+                <span class="scope-reference-copy"><strong>DRAM 셀</strong><small>20 nm · DNA 폭의 10배</small></span>
+              </div>
             </div>
             <div class="scope-stage-buttons" id="scope-stage-buttons" aria-label="확대 단계 선택">
               <button type="button" data-scale-stage="0" class="active" aria-label="HBM 패키지 단계">1</button>
