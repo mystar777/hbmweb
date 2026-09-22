@@ -27,7 +27,10 @@ window.HBM.ScaleDive = class {
         spanNm: 35_000_000,
         magnification: 1,
         scaleBar: '10 mm',
+        scaleBarNm: 10_000_000,
         description: 'GPU 옆에 놓이는 3차원 메모리 묶음입니다.',
+        comparison: '지우개 한 조각',
+        comparisonNote: '현재 시야 폭 약 35 mm',
         image: 'assets/scale-dive/01-hbm-package.jpg',
       },
       {
@@ -36,7 +39,10 @@ window.HBM.ScaleDive = class {
         spanNm: 1_000_000,
         magnification: 35,
         scaleBar: '250 μm',
+        scaleBarNm: 250_000,
         description: '얇은 DRAM 여러 장을 쌓아 같은 면적에 더 많은 데이터를 담습니다.',
+        comparison: '머리카락 10가닥',
+        comparisonNote: '현재 시야 폭 약 1 mm',
         image: 'assets/scale-dive/02-hbm-stack.jpg',
       },
       {
@@ -45,7 +51,10 @@ window.HBM.ScaleDive = class {
         spanNm: 100_000,
         magnification: 350,
         scaleBar: '25 μm',
+        scaleBarNm: 25_000,
         description: '수많은 메모리 셀이 바둑판처럼 반복되는 저장 공간입니다.',
+        comparison: '머리카락 굵기',
+        comparisonNote: '현재 시야 폭 약 100 μm · 머리카락 ≈ 70 μm',
         image: 'assets/scale-dive/03-dram-die.jpg',
       },
       {
@@ -54,7 +63,10 @@ window.HBM.ScaleDive = class {
         spanNm: 10_000,
         magnification: 3_500,
         scaleBar: '2 μm',
+        scaleBarNm: 2_000,
         description: '수 μm급 구리 통로가 층과 층 사이를 엘리베이터처럼 연결합니다.',
+        comparison: '적혈구 1개',
+        comparisonNote: '현재 시야 폭 약 10 μm · 적혈구 ≈ 8 μm',
         image: 'assets/scale-dive/04-tsv.jpg',
       },
       {
@@ -63,7 +75,10 @@ window.HBM.ScaleDive = class {
         spanNm: 20,
         magnification: 1_750_000,
         scaleBar: '5 nm',
+        scaleBarNm: 5,
         description: '10 nm급 공정 세대의 셀과 배선입니다. 공정 이름은 한 부품의 실제 치수와 같지 않습니다.',
+        comparison: 'DNA 폭의 약 10배',
+        comparisonNote: '현재 시야 폭 약 20 nm · DNA ≈ 2 nm',
         image: 'assets/scale-dive/05-dram-cell.jpg',
       },
     ];
@@ -97,6 +112,8 @@ window.HBM.ScaleDive = class {
       size: document.getElementById('current-size'),
       target: document.getElementById('scope-target'),
       description: document.getElementById('comparison-text'),
+      comparison: document.getElementById('scope-comparison'),
+      comparisonNote: document.getElementById('scope-comparison-note'),
       levelName: document.getElementById('scale-level-name'),
       meter: document.getElementById('scope-meter-fill'),
       hint: document.getElementById('scale-gesture-hint'),
@@ -155,7 +172,7 @@ window.HBM.ScaleDive = class {
   }
 
   scrollToProgress(progress) {
-    const sectionTop = this.container.offsetTop;
+    const sectionTop = this.container.getBoundingClientRect().top + window.scrollY;
     const scrollRange = Math.max(this.container.offsetHeight - window.innerHeight, 1);
     window.scrollTo({ top: sectionTop + this.clamp(progress) * scrollRange, behavior: 'auto' });
   }
@@ -181,7 +198,7 @@ window.HBM.ScaleDive = class {
       const delta = Math.min(now - this.lastFrame, 34);
       this.lastFrame = now;
       const previous = this.progress;
-      const ease = 1 - Math.exp(-delta / 110);
+      const ease = 1 - Math.exp(-delta / 190);
       this.progress += (this.targetProgress - this.progress) * ease;
       this.velocity += ((this.progress - previous) - this.velocity) * 0.18;
       this.time += delta * 0.001;
@@ -227,7 +244,10 @@ window.HBM.ScaleDive = class {
     const ctx = this.ctx;
     const dpr = Math.max(window.devicePixelRatio || 1, 1);
     const state = this.stageState();
-    const blend = state.nextIndex === state.index ? 0 : this.smoothstep(0.52, 0.98, state.local);
+    // Keep both neighboring scales visible across most of the journey. This
+    // makes the microscope feel like it is continuously diving instead of
+    // cutting to a new still whenever a stage boundary is crossed.
+    const blend = state.nextIndex === state.index ? 0 : this.smoothstep(0.08, 0.92, state.local);
 
     ctx.save();
     ctx.clearRect(0, 0, this.width, this.height);
@@ -286,7 +306,7 @@ window.HBM.ScaleDive = class {
     }
 
     const baseSize = this.viewportRadius * 2.06;
-    const zoom = incoming ? 0.78 + local * 0.28 : 1 + local * 0.66;
+    const zoom = incoming ? 0.58 + local * 0.42 : 1 + local * 0.82;
     const drift = Math.sin(this.time * 0.7 + index) * this.viewportRadius * 0.008;
 
     ctx.save();
@@ -398,6 +418,8 @@ window.HBM.ScaleDive = class {
 
   drawScaleBar(ctx, state, dpr) {
     const stage = this.stages[state.index];
+    const next = this.stages[state.nextIndex];
+    const scaleBar = this.formatSpan(this.interpolateLog(stage.scaleBarNm, next.scaleBarNm, state.local));
     const barWidth = this.viewportRadius * 0.34;
     const x = this.centerX + this.viewportRadius * 0.48 - barWidth;
     const y = this.centerY + this.viewportRadius * 0.72;
@@ -417,7 +439,7 @@ window.HBM.ScaleDive = class {
     ctx.font = `600 ${Math.max(11 * dpr, this.viewportRadius * 0.042)}px "Noto Sans KR", sans-serif`;
     ctx.textAlign = 'right';
     ctx.textBaseline = 'bottom';
-    ctx.fillText(stage.scaleBar, x + barWidth, y - 9 * dpr);
+    ctx.fillText(scaleBar, x + barWidth, y - 9 * dpr);
     ctx.restore();
   }
 
@@ -438,27 +460,33 @@ window.HBM.ScaleDive = class {
   }
 
   updateUI(state) {
-    const stage = this.stages[state.index];
-    const next = this.stages[state.nextIndex];
-    const mag = this.interpolateLog(stage.magnification, next.magnification, state.local);
-    const span = this.interpolateLog(stage.spanNm, next.spanNm, state.local);
+    const displayIndex = state.nextIndex !== state.index && state.local > 0.52
+      ? state.nextIndex
+      : state.index;
+    const stage = this.stages[displayIndex];
+    const fromStage = this.stages[state.index];
+    const toStage = this.stages[state.nextIndex];
+    const mag = this.interpolateLog(fromStage.magnification, toStage.magnification, state.local);
+    const span = this.interpolateLog(fromStage.spanNm, toStage.spanNm, state.local);
 
     if (this.ui.magnification) this.ui.magnification.textContent = this.formatMagnification(mag);
     if (this.ui.size) this.ui.size.textContent = this.formatSpan(span);
     if (this.ui.target) this.ui.target.textContent = stage.target;
     if (this.ui.description) this.ui.description.textContent = stage.description;
+    if (this.ui.comparison) this.ui.comparison.textContent = stage.comparison;
+    if (this.ui.comparisonNote) this.ui.comparisonNote.textContent = stage.comparisonNote;
     if (this.ui.meter) this.ui.meter.style.height = `${Math.max(2, this.progress * 100)}%`;
 
     if (this.ui.levelName) {
-      this.ui.levelName.innerHTML = `<span class="level-index">${String(state.index + 1).padStart(2, '0')} / 05</span><strong>${stage.name}</strong>`;
+      this.ui.levelName.innerHTML = `<span class="level-index">${String(displayIndex + 1).padStart(2, '0')} / 05</span><strong>${stage.name}</strong>`;
     }
 
-    if (this.currentStage !== state.index) {
-      this.currentStage = state.index;
-      this.container.dataset.scaleStage = String(state.index);
+    if (this.currentStage !== displayIndex) {
+      this.currentStage = displayIndex;
+      this.container.dataset.scaleStage = String(displayIndex);
       this.ui.buttons.forEach((button, index) => {
-        button.classList.toggle('active', index === state.index);
-        button.setAttribute('aria-current', index === state.index ? 'step' : 'false');
+        button.classList.toggle('active', index === displayIndex);
+        button.setAttribute('aria-current', index === displayIndex ? 'step' : 'false');
       });
     }
 

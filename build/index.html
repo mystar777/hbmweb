@@ -171,7 +171,7 @@
     <section id="scene-3" class="scene scene-scale-dive" data-scene-index="3">
       <div class="scene-content scale-dive-content">
         <div class="scale-header">
-          <p class="scene-label fade-element">CHAPTER 03</p>
+          <p class="scene-label fade-element">CHAPTER 04</p>
           <h2 class="scene-title fade-element" data-delay="200">나노의 세계로</h2>
           <p class="scale-intro fade-element" data-delay="350">우주에서 도로 위 사람을 찾듯, HBM 패키지에서 단 하나의 메모리 셀까지 내려갑니다.</p>
         </div>
@@ -195,6 +195,11 @@
               <div class="scope-meter-labels"><span>mm</span><span>μm</span><span>nm</span></div>
             </div>
             <p class="comparison-text" id="comparison-text">GPU 옆에 놓이는 3차원 메모리 묶음입니다.</p>
+            <div class="scope-comparison" aria-live="polite">
+              <span class="scope-comparison-label">크기 비교</span>
+              <strong id="scope-comparison">지우개 한 조각</strong>
+              <small id="scope-comparison-note">현재 시야 폭 약 35 mm</small>
+            </div>
             <div class="scope-stage-buttons" id="scope-stage-buttons" aria-label="확대 단계 선택">
               <button type="button" data-scale-stage="0" class="active" aria-label="HBM 패키지 단계">1</button>
               <button type="button" data-scale-stage="1" aria-label="적층 DRAM 단계">2</button>
@@ -213,7 +218,7 @@
     <section id="scene-4" class="scene scene-dataflow" data-scene-index="4">
       <div class="scene-content">
         <div class="dataflow-header">
-          <p class="scene-label fade-element">CHAPTER 04</p>
+          <p class="scene-label fade-element">CHAPTER 05</p>
           <h2 class="scene-title fade-element" data-delay="200">빛의 속도로<br><span class="accent">흐르는 데이터</span></h2>
         </div>
         <div class="dataflow-comparison">
@@ -284,10 +289,20 @@
     <section id="scene-5" class="scene scene-evolution" data-scene-index="5">
       <div class="scene-content">
         <div class="evo-header">
-          <p class="scene-label fade-element">CHAPTER 05</p>
+          <p class="scene-label fade-element">CHAPTER 06</p>
           <h2 class="scene-title fade-element" data-delay="200">HBM의 <span class="accent">진화</span></h2>
           <p class="scene-desc fade-element" data-delay="400">2013년 탄생 이후, 끊임없이 한계를 넘어왔습니다</p>
         </div>
+        <section class="evo-scrubber" aria-labelledby="evo-scrubber-title">
+          <div class="evo-scrubber-heading">
+            <span id="evo-scrubber-title">전시 체험 · 세대 선택</span>
+            <output id="evo-scrubber-value" for="evo-scrubber">HBM</output>
+          </div>
+          <label class="sr-only" for="evo-scrubber">HBM 세대 선택</label>
+          <input id="evo-scrubber" type="range" min="0" max="5" value="0" step="1">
+          <div class="evo-scrubber-scale" aria-hidden="true"><span>2013</span><span>2026</span></div>
+          <p>손잡이를 드래그해 세대별 대역폭·용량·적층 변화를 비교해보세요.</p>
+        </section>
         <div class="evolution-timeline" id="evo-timeline">
           <div class="evo-track"></div>
           <div class="evo-item" data-gen="hbm1" data-year="2013" data-bw="128" data-cap="1" data-stack="4">

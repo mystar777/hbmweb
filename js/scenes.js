@@ -167,9 +167,13 @@ window.HBM = window.HBM || {};
       // Scale Dive scroll-driven zoom (Scene 3)
       const scaleDiveSection = document.getElementById('scene-3');
       if (scaleDiveSection) {
-        const rect = scaleDiveSection.getBoundingClientRect();
-        const sectionHeight = scaleDiveSection.offsetHeight - viewportHeight;
-        const sectionScroll = -rect.top;
+        // The microscope viewport is fixed while this long exhibit is active.
+        // Reading rect.top here therefore always returned 0 and every scroll
+        // event snapped the dive back to its first frame. Use document-space
+        // coordinates so scroll and drag share one stable progress source.
+        const sectionTop = scaleDiveSection.getBoundingClientRect().top + window.scrollY;
+        const sectionHeight = Math.max(scaleDiveSection.offsetHeight - viewportHeight, 1);
+        const sectionScroll = scrollY - sectionTop;
         const scaleProgress = Math.max(0, Math.min(1, sectionScroll / sectionHeight));
 
         if (this.scaleDive && this.activeSceneIndex === 3) {
@@ -183,6 +187,7 @@ window.HBM = window.HBM || {};
     initMuseumInteractions() {
       this.initStackLab();
       this.initBandwidthLab();
+      this.initEvolutionLab();
     }
 
     initStackLab() {
@@ -194,9 +199,17 @@ window.HBM = window.HBM || {};
 
       const updateGap = () => {
         const value = Number(slider.value);
-        stack.style.setProperty('--stack-gap', `${Math.round(value * 0.18)}px`);
-        stack.classList.toggle('is-exploded', value > 35);
-        if (output) output.textContent = value < 15 ? '조립 상태' : value < 70 ? '층 사이 관찰' : '완전 분해';
+        const spread = value / 100;
+        const layers = Array.from(stack.querySelectorAll('.stack-layer'));
+        stack.style.setProperty('--stack-gap', `${Math.round(value * 0.28)}px`);
+        stack.classList.toggle('is-exploded', value > 10);
+        layers.forEach((layer, index) => {
+          const centered = index - (layers.length - 1) / 2;
+          layer.style.setProperty('--layer-offset', `${(centered * spread * 5.5).toFixed(1)}px`);
+          layer.style.setProperty('--layer-depth', `${(Math.abs(centered) * spread * 2.4).toFixed(1)}px`);
+        });
+        if (output) output.textContent = value < 10 ? '조립 상태' : value < 42 ? '미세 분리' : value < 76 ? '층 · TSV 관찰' : '완전 분해';
+        slider.setAttribute('aria-valuetext', output ? output.textContent : `${value}%`);
       };
 
       slider.addEventListener('input', updateGap);
@@ -251,6 +264,36 @@ window.HBM = window.HBM || {};
       };
 
       slider.addEventListener('input', update);
+      update();
+    }
+
+    initEvolutionLab() {
+      const slider = document.getElementById('evo-scrubber');
+      const output = document.getElementById('evo-scrubber-value');
+      const timeline = document.getElementById('evo-timeline');
+      if (!slider || !timeline) return;
+
+      const items = Array.from(timeline.querySelectorAll('.evo-item'));
+      const names = items.map((item) => item.querySelector('h3')?.textContent?.trim() || 'HBM');
+      const update = () => {
+        const selected = Math.max(0, Math.min(items.length - 1, Number(slider.value)));
+        timeline.dataset.selectedGeneration = String(selected);
+        items.forEach((item, index) => {
+          item.classList.toggle('is-selected', index === selected);
+          item.classList.toggle('is-past', index < selected);
+          item.classList.toggle('is-future', index > selected);
+        });
+        if (output) output.textContent = names[selected];
+        slider.setAttribute('aria-valuetext', names[selected]);
+      };
+
+      slider.addEventListener('input', update);
+      items.forEach((item, index) => {
+        item.addEventListener('click', () => {
+          slider.value = String(index);
+          update();
+        });
+      });
       update();
     }
 
