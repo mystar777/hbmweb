@@ -1,7 +1,7 @@
 /**
  * Chapter 4 microscope exhibit.
  *
- * A motion-interpolated 60 fps optical sequence is kept paused and addressed
+ * A motion-interpolated 120 fps optical sequence is kept paused and addressed
  * by timestamp. Intermediate frames are calculated from the supplied footage.
  * Only wheel/drag gestures that begin inside the circular lens are captured;
  * all input outside the lens remains normal page navigation.
@@ -46,13 +46,16 @@ window.HBM.ScaleDive = class {
     ];
 
     this.progress = 0;
+    this.targetProgress = 0;
     this.videoReady = false;
     this.running = false;
-    this.frameRate = 60;
-    this.frameCount = 1962;
+    this.frameRate = 120;
+    this.frameCount = 3924;
     this.dragging = false;
     this.hoveringLens = false;
     this.scrubTimer = null;
+    this.progressAnimationId = null;
+    this.lastProgressTick = 0;
 
     this.cacheUI();
     this.bindVideo();
@@ -92,7 +95,13 @@ window.HBM.ScaleDive = class {
 
     this.video.addEventListener('loadedmetadata', ready);
     this.video.addEventListener('loadeddata', ready);
-    this.video.addEventListener('seeked', () => this.render());
+    this.video.addEventListener('seeked', () => {
+      if (typeof this.video.requestVideoFrameCallback === 'function') {
+        this.video.requestVideoFrameCallback(() => this.render());
+      } else {
+        this.render();
+      }
+    });
     this.video.addEventListener('error', () => {
       this.container.classList.add('video-fallback');
       this.render();
@@ -106,8 +115,8 @@ window.HBM.ScaleDive = class {
       if (!this.isPointInsideLens(event.clientX, event.clientY)) return;
 
       const deltaPixels = this.normalizedWheelDelta(event);
-      const wantsPastStart = this.progress <= 0.0001 && deltaPixels < 0;
-      const wantsPastEnd = this.progress >= 0.9999 && deltaPixels > 0;
+      const wantsPastStart = this.targetProgress <= 0.0001 && deltaPixels < 0;
+      const wantsPastEnd = this.targetProgress >= 0.9999 && deltaPixels > 0;
 
       // At both ends, release the wheel back to the document so visitors can
       // enter the previous/next chapter without moving the pointer.
@@ -115,8 +124,11 @@ window.HBM.ScaleDive = class {
 
       event.preventDefault();
       event.stopPropagation();
-      const step = Math.max(-160, Math.min(160, deltaPixels)) * 0.00022;
-      this.setProgress(this.progress + step);
+      const step = Math.max(-120, Math.min(120, deltaPixels)) * 0.00002;
+      const targetLead = 0.025;
+      const requested = this.targetProgress + step;
+      const bounded = Math.max(this.progress - targetLead, Math.min(this.progress + targetLead, requested));
+      this.setProgress(bounded);
       this.markScrubbing();
     }, { passive: false });
 
@@ -137,7 +149,7 @@ window.HBM.ScaleDive = class {
       event.preventDefault();
       this.dragging = true;
       this.dragStartY = event.clientY;
-      this.dragStartProgress = this.progress;
+      this.dragStartProgress = this.targetProgress;
       this.canvas.setPointerCapture(event.pointerId);
       this.container.classList.add('is-dragging');
       this.markScrubbing();
@@ -197,10 +209,42 @@ window.HBM.ScaleDive = class {
 
   setProgress(progress) {
     const next = this.clamp(progress);
-    if (Math.abs(next - this.progress) < 0.00001) return;
-    this.progress = next;
-    this.seekVideo();
-    this.render();
+    if (Math.abs(next - this.targetProgress) < 0.000001) return;
+    this.targetProgress = next;
+    this.startProgressAnimation();
+  }
+
+  startProgressAnimation() {
+    if (this.progressAnimationId) return;
+    this.lastProgressTick = performance.now();
+
+    const tick = (now) => {
+      const elapsed = Math.min(42, Math.max(1, now - this.lastProgressTick));
+      this.lastProgressTick = now;
+      const remaining = this.targetProgress - this.progress;
+      const settleThreshold = 0.5 / Math.max(1, this.frameCount - 1);
+
+      if (Math.abs(remaining) <= settleThreshold) {
+        this.progress = this.targetProgress;
+      } else {
+        // Time-based damping keeps mouse wheels and high-resolution trackpads
+        // equally smooth while still following a fast reverse scrub.
+        const blend = 1 - Math.exp(-elapsed / 115);
+        this.progress += remaining * blend;
+      }
+
+      this.seekVideo();
+      this.render();
+
+      if (this.progress === this.targetProgress) {
+        this.progressAnimationId = null;
+        this.lastProgressTick = 0;
+        return;
+      }
+      this.progressAnimationId = requestAnimationFrame(tick);
+    };
+
+    this.progressAnimationId = requestAnimationFrame(tick);
   }
 
   seekVideo(force = false) {
@@ -210,7 +254,7 @@ window.HBM.ScaleDive = class {
     this.video.pause();
     const end = Math.max(0, this.video.duration - 1 / this.frameRate);
     const wanted = this.progress * end;
-    if (force || Math.abs(this.video.currentTime - wanted) > 1 / 90) {
+    if (force || Math.abs(this.video.currentTime - wanted) > 1 / (this.frameRate * 2)) {
       this.video.currentTime = wanted;
     }
   }
@@ -218,12 +262,18 @@ window.HBM.ScaleDive = class {
   start() {
     this.running = true;
     if (this.video) this.video.pause();
+    if (Math.abs(this.targetProgress - this.progress) > 0.5 / Math.max(1, this.frameCount - 1)) {
+      this.startProgressAnimation();
+    }
     this.render();
   }
 
   stop() {
     this.running = false;
     if (this.video) this.video.pause();
+    if (this.progressAnimationId) cancelAnimationFrame(this.progressAnimationId);
+    this.progressAnimationId = null;
+    this.lastProgressTick = 0;
   }
 
   resize(width, height) {
@@ -356,7 +406,7 @@ window.HBM.ScaleDive = class {
     if (this.ui.scrubFill) this.ui.scrubFill.style.width = `${this.progress * 100}%`;
     if (this.ui.frameReadout) this.ui.frameReadout.textContent = frameLabel;
     if (this.ui.levelName) {
-      this.ui.levelName.innerHTML = `<span class="level-index">${String(state.index + 1).padStart(2, '0')} / 05 · 60 FPS ${frameLabel}</span><strong>${stage.name}</strong>`;
+      this.ui.levelName.innerHTML = `<span class="level-index">${String(state.index + 1).padStart(2, '0')} / 05 · 120 FPS ${frameLabel}</span><strong>${stage.name}</strong>`;
     }
     this.ui.buttons.forEach((button, index) => button.classList.toggle('active', index === state.index));
     this.ui.references.forEach((item, index) => item.classList.toggle('is-active', index === state.index));
