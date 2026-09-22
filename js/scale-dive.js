@@ -1,7 +1,8 @@
 /**
  * Chapter 4 microscope exhibit.
  *
- * A real 30 fps optical sequence is kept paused and addressed by timestamp.
+ * A motion-interpolated 60 fps optical sequence is kept paused and addressed
+ * by timestamp. Intermediate frames are calculated from the supplied footage.
  * Only wheel/drag gestures that begin inside the circular lens are captured;
  * all input outside the lens remains normal page navigation.
  */
@@ -47,8 +48,8 @@ window.HBM.ScaleDive = class {
     this.progress = 0;
     this.videoReady = false;
     this.running = false;
-    this.frameRate = 30;
-    this.frameCount = 981;
+    this.frameRate = 60;
+    this.frameCount = 1962;
     this.dragging = false;
     this.hoveringLens = false;
     this.scrubTimer = null;
@@ -114,7 +115,7 @@ window.HBM.ScaleDive = class {
 
       event.preventDefault();
       event.stopPropagation();
-      const step = Math.max(-160, Math.min(160, deltaPixels)) * 0.00045;
+      const step = Math.max(-160, Math.min(160, deltaPixels)) * 0.00022;
       this.setProgress(this.progress + step);
       this.markScrubbing();
     }, { passive: false });
@@ -355,7 +356,7 @@ window.HBM.ScaleDive = class {
     if (this.ui.scrubFill) this.ui.scrubFill.style.width = `${this.progress * 100}%`;
     if (this.ui.frameReadout) this.ui.frameReadout.textContent = frameLabel;
     if (this.ui.levelName) {
-      this.ui.levelName.innerHTML = `<span class="level-index">${String(state.index + 1).padStart(2, '0')} / 05 · SOURCE ${frameLabel}</span><strong>${stage.name}</strong>`;
+      this.ui.levelName.innerHTML = `<span class="level-index">${String(state.index + 1).padStart(2, '0')} / 05 · 60 FPS ${frameLabel}</span><strong>${stage.name}</strong>`;
     }
     this.ui.buttons.forEach((button, index) => button.classList.toggle('active', index === state.index));
     this.ui.references.forEach((item, index) => item.classList.toggle('is-active', index === state.index));
